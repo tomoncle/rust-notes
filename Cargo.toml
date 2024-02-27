@@ -28,3 +28,8 @@ actix-web = "4.4.0"
 diesel = { version = "2.1.4", features = ["sqlite"] }
 libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
 dotenv = "0.15.0"
+# 视频处理
+#ffmpeg = "0.3.0"
+walkdir = "2.4.0"
+# cmd
+clap = { version = "4.4.5", features = ["derive"] }
