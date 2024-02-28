@@ -36,7 +36,8 @@ use clap::Parser;
 #[command(version = "1.0")]
 #[command(about = "转换指定目录中的视频及图片文件.", long_about = None)]
 struct Args {
-    // 注意下面的注释是三个斜杠!!!
+    // 对参数的描述信息，使用 `///` 来表示
+
     /// 需要转换的系统目录（绝对路径）
     #[arg(short, long)]
     input: Option<String>,
