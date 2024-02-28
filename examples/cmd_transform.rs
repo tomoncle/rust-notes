@@ -25,10 +25,16 @@
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
+use std::fs::OpenOptions;
+use std::io::{Read, Write};
 use std::path::Path;
 use std::process::{Command, exit};
 
+use chrono::{DateTime, Local};
 use clap::Parser;
+
+// 日志文件
+const LOG_FILE: &str = "transform-rs.log";
 
 #[derive(Parser)]
 #[command(name = "fileTransform")]
@@ -48,8 +54,35 @@ struct Args {
 }
 
 
+struct Transformer {
+    input_dir: String,
+    output_dir: String,
+}
+
+impl Transformer {
+    fn new(input_dir: String, output_dir: String) -> Self {
+        Transformer {
+            input_dir,
+            output_dir,
+        }
+    }
+}
+
 fn trans_video(input_file: &str, output_file: &str) -> Result<i32, Box<dyn Error>> {
-    let duration = get_video_duration(input_file)?;
+    // let duration = get_video_duration(input_file)?;
+    // 文件损坏，不能解析
+    let duration = match get_video_duration(input_file) {
+        Ok(val) => val,
+        Err(err) => {
+            eprintln!("解析文件失败: {}, {}", input_file, err);
+            String::new()
+        }
+    };
+    if duration.is_empty() {
+        println!("转换视频失败：{} -> {}", input_file, output_file);
+        return Ok(-1)
+    }
+
     let status = Command::new("ffmpeg")
         .arg("-i")
         .arg(input_file)
@@ -61,11 +94,16 @@ fn trans_video(input_file: &str, output_file: &str) -> Result<i32, Box<dyn Error
         .arg("copy")
         .arg("-y")
         .arg("-loglevel")
-        .arg("warning")
+        .arg("error")
         .arg(output_file)
         .status()?;
-    println!("转换视频成功：{} -> {}", input_file, output_file);
-    Ok(status.code().unwrap())
+    let code = status.code().unwrap_or(-1);
+    if code == 0 {
+        println!("转换视频成功：{} -> {}", input_file, output_file);
+    } else {
+        println!("转换视频失败：{} -> {}", input_file, output_file);
+    }
+    Ok(code)
 }
 
 
@@ -73,12 +111,20 @@ fn trans_image(input_file: &str, output_file: &str) -> Result<i32, Box<dyn Error
     let status = Command::new("ffmpeg")
         .arg("-i")
         .arg(input_file)
-        .arg("-q:v 2")
+        .arg("-q:v")
+        .arg("2")
         .arg("-y")
+        .arg("-loglevel")
+        .arg("error")
         .arg(output_file)
         .status()?;
-    println!("转换图片成功：{} -> {}", input_file, output_file);
-    Ok(status.code().unwrap())
+    let code = status.code().unwrap_or(-1);
+    if code == 0 {
+        println!("转换图片成功：{} -> {}", input_file, output_file);
+    } else {
+        println!("转换图片失败：{} -> {}", input_file, output_file);
+    }
+    Ok(code)
 }
 
 fn get_video_duration(input_file: &str) -> Result<String, Box<dyn Error>> {
@@ -93,10 +139,10 @@ fn get_video_duration(input_file: &str) -> Result<String, Box<dyn Error>> {
         .output()?;
     let duration = String::from_utf8(output.stdout)?.trim().to_string();
     let seconds = format!("{:.2}", duration.parse::<f64>()?);
-    Ok(sec_to_time(seconds.parse::<f64>().unwrap()))
+    Ok(duration_format(seconds.parse::<f64>().unwrap()))
 }
 
-fn sec_to_time(sec: f64) -> String {
+fn duration_format(sec: f64) -> String {
     let sec = sec - 0.01;
     let hour = (sec.floor() / 3600.0) as i32;
 
@@ -110,9 +156,9 @@ fn sec_to_time(sec: f64) -> String {
     format!("{:02}:{:02}:{:02}.{:02}", hour, minute, second, millisecond)
 }
 
-fn get_root_dir(path: &Path) -> std::path::PathBuf {
-    path.ancestors().last().unwrap_or(path).to_path_buf()
-}
+// fn get_root_dir(path: &Path) -> PathBuf {
+//     path.ancestors().last().unwrap_or(path).to_path_buf()
+// }
 
 fn is_video_file(file_path: &str) -> bool {
     let video_extensions = [
@@ -128,12 +174,6 @@ fn is_video_file(file_path: &str) -> bool {
 
 fn is_image_file(file_path: &str) -> bool {
     let image_extensions = ["jpeg", "png", "gif", "bmp", "tiff", "webp", "heif"];
-    // if let Some(ext) = Path::new(file_path).extension() {
-    //     if let Some(ext_str) = ext.to_str() {
-    //         return image_extensions.contains(&ext_str.to_lowercase().as_str());
-    //     }
-    // }
-    // false
     Path::new(file_path)
         .extension()
         .and_then(OsStr::to_str)
@@ -166,26 +206,54 @@ fn dir_empty(dir_path: &str) -> bool {
         entries.filter_map(|entry| entry.ok()).count()) == 0
 }
 
-fn loop_dir(input_dir: &str, output_dir: &str) -> Result<(), Box<dyn Error>> {
+fn trans_dir(input_dir: &str, output_dir: &str) -> Result<(), Box<dyn Error>> {
     if dir_empty(input_dir) {
-        return Ok(())
+        return Ok(());
     }
+    let log_path = dirs::home_dir()
+        .unwrap_or(std::env::current_dir().unwrap())
+        .join(LOG_FILE).display().to_string();
+    let filename = log_path.as_str();
+    // 打开文件，如果文件不存在则创建它
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(filename)
+        .expect(format!("打开日志文件失败: {}!", filename).as_str());
+
+    // 获取更新前的文件内容
+    let mut log_content = String::new();
+    file.read_to_string(&mut log_content).expect("");
+
     // 使用 WalkDir 遍历文件夹
     for entry in walkdir::WalkDir::new(input_dir).into_iter().filter_map(|e| e.ok()) {
         if entry.path().is_file() {
             let source_file = entry.path().display().to_string();
             let target_file = file_rename(&source_file, input_dir, output_dir);
+            if log_content.contains(&target_file) {
+                continue;
+            }
             let parent_path = Path::new(&target_file).parent();
             if !parent_path.is_none() && !parent_path.unwrap().exists() {
                 let msg = format!("创建目标文件夹 {} 失败!", parent_path.unwrap().display());
                 fs::create_dir_all(parent_path.unwrap()).expect(&msg);
             }
+            let mut code = 0;
             if is_image_file(&source_file) {
-                trans_image(&source_file, &target_file)?;
+                code = trans_image(&source_file, &target_file)?;
             } else if is_video_file(&source_file) {
-                trans_video(&source_file, &target_file)?;
+                code = trans_video(&source_file, &target_file)?;
             } else {
                 copy_file(entry.path(), Path::new(&target_file));
+                code = 0;
+            }
+            if code == 0 {
+                // 获取当前时间
+                let current_time: DateTime<Local> = Local::now();
+                // 向文件写入内容
+                let value = format!("{}: {} ok!\n", current_time.format("%Y-%m-%d %H:%M:%S"), target_file);
+                file.write_all(value.as_bytes()).expect("更新日志文件失败!");
             }
         }
     }
@@ -196,6 +264,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
     let input = args.input.unwrap_or_else(|| "".to_owned());
     let output = args.output.unwrap_or_else(|| "./".to_owned());
+    // let input = "E:\\下载\\百度云盘";
+    // let output = "E:\\backup";
     let os = std::env::consts::OS;
     // println!("{input} {output}");
     if !input.is_empty() && output != "./" {
@@ -214,7 +284,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             _ => println!("Unknown OS"),
         }
         println!("当前执行目录：{}", std::env::current_dir().unwrap().display());
-        loop_dir(&input, &output)?;
+        trans_dir(&input, &output)?;
     } else {
         println!("Error：请输入输入目录和输出目录!");
     };
