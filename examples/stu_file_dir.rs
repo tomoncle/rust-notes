@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
 
@@ -79,6 +80,14 @@ fn is_video_file(file_path: &str) -> bool {
     false
 }
 
+fn is_image_file(file_path: &str) -> bool {
+    let image_extensions = ["jpeg", "png", "gif", "bmp", "tiff", "webp", "heif"];
+    Path::new(file_path)
+        .extension()
+        .and_then(OsStr::to_str)
+        .map(|ext| image_extensions.contains(&ext.to_lowercase().as_str()))
+        .unwrap_or(false)
+}
 
 fn file_rename(file_name: &str, input_dir: &str, output_dir: &str) -> String {
     let input_parent = Path::new(input_dir).parent();
@@ -95,10 +104,10 @@ fn copy_file(source_file: &Path, target_file: &Path) {
     let mut msg;
     if !parent_path.is_none() && !parent_path.unwrap().exists() {
         msg = format!("创建文件夹 {} 失败!", parent_path.unwrap().display());
-        std::fs::create_dir_all(parent_path.unwrap()).expect(&msg);
+        fs::create_dir_all(parent_path.unwrap()).expect(&msg);
     }
     msg = format!("拷贝文件 {} -> {} 失败!", source_file.display(), target_file.display());
-    std::fs::copy(source_file, target_file).expect(&msg);
+    fs::copy(source_file, target_file).expect(&msg);
 }
 
 fn dir_empty(dir_path: &str) -> bool {
