@@ -26,25 +26,46 @@ use std::io::prelude::*;
 
 use chrono::{DateTime, Local};
 
+struct Log {
+    date_format: String,
+}
+
+impl Log {
+    fn new() -> Self {
+        Log {
+            date_format: String::from("%Y-%m-%d %H:%M:%S"),
+        }
+    }
+    fn info(&self, msg: &str) {
+        let time = Local::now().format(&self.date_format);
+        println!("\x1b[32m{time} [INFO]: {msg}\x1b[0m");
+    }
+    fn warning(&self, msg: &str) {
+        let time = Local::now().format(&self.date_format);
+        println!("\x1b[33m{time} [WARN]: {msg}\x1b[0m");
+    }
+
+    fn error(&self, msg: &str) {
+        let time = Local::now().format(&self.date_format);
+        println!("\x1b[31m{time} [ERROR]: {msg}\x1b[0m");
+    }
+}
+
 fn main() {
     let file_path = "example.txt";
-
+    let log = Log::new();
     // 打开文件，如果文件不存在则创建它
     let mut file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .open(file_path)
+        .read(true).write(true).create(true).open(file_path)
         .expect("Unable to open or create file");
 
     // 获取更新前的文件内容
     let mut text = String::new();
     file.read_to_string(&mut text).expect("");
-    println!("更新前文件内容: \n{}", text);
+    log.warning(&format!("更新前文件内容: \n{}", text));
 
     // 获取当前时间
     let current_time: DateTime<Local> = Local::now();
-    // println!("Current time is: {}", current_time.format("%Y-%m-%d %H:%M:%S"));
 
     // 向文件写入内容
     let value = format!("{}: Hello, Rust!\n", current_time.format("%Y-%m-%d %H:%M:%S"));
@@ -57,5 +78,5 @@ fn main() {
     let mut contents = String::new();
     file.read_to_string(&mut contents).expect("Unable to read file");
 
-    println!("更新后文件内容: \n{}", contents);
+    log.info(&format!("更新后文件内容: \n{}", contents));
 }

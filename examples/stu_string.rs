@@ -96,4 +96,14 @@ fn main() {
         _ => "Other",
     };
     println!("The text is: {}", text);
+
+
+    // 绿色文本
+    println!("\x1b[32mGreen text\x1b[0m");
+
+    // 红色文本
+    println!("\x1b[31mRed text\x1b[0m");
+
+    // 黄色文本
+    println!("\x1b[33mYellow text\x1b[0m");
 }
