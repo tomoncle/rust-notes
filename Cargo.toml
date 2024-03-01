@@ -37,3 +37,5 @@ clap = { version = "4.4.5", features = ["derive"] }
 # datetime
 chrono = "0.4.33"
 dirs = "5.0.1"
+# 系统进程
+sysinfo = "0.30.5"
