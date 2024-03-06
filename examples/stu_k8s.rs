@@ -22,23 +22,19 @@
  * SOFTWARE.
  */
 
-use utils::json::JsonConverter;
-use utils::json::Person;
+use kube::{Api, Client};
+use k8s_openapi::api::core::v1::Pod;
 
-mod utils { pub mod json; }
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::try_default().await?;
+    // let pods: Api<Pod> = Api::default_namespaced(client);
+    let pods: Api<Pod> = Api::namespaced(client, "kube-system");
 
-fn main() {
-    let person = Person { name: "Alice".to_string(), age: 30 };
-    let json_str = JsonConverter::convert_json(&person);
-    println!("JSON String: {}", json_str);
+    let p = pods.get("net-tools").await?;
+    println!("\nPod 详情: \n{:?}", p.spec.clone().unwrap().containers);
+    println!("\n测试Json: \n{}", serde_json::to_string_pretty(&p).unwrap());
+    println!("\n测试yaml: \n{}", serde_yaml::to_string(&p).unwrap());
 
-    let json_obj: Person = JsonConverter::convert_object(&json_str);
-    println!("Json Object: {:?}", json_obj);
-
-    let persons = vec![
-        Person { name: "Bob".to_string(), age: 25 },
-        Person { name: "Charlie".to_string(), age: 35 },
-    ];
-    let json_array_str = JsonConverter::convert_json_array(&persons);
-    println!("JSON Array String: {}", json_array_str);
+    Ok(())
 }

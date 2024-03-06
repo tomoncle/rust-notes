@@ -22,23 +22,3 @@
  * SOFTWARE.
  */
 
-use utils::json::JsonConverter;
-use utils::json::Person;
-
-mod utils { pub mod json; }
-
-fn main() {
-    let person = Person { name: "Alice".to_string(), age: 30 };
-    let json_str = JsonConverter::convert_json(&person);
-    println!("JSON String: {}", json_str);
-
-    let json_obj: Person = JsonConverter::convert_object(&json_str);
-    println!("Json Object: {:?}", json_obj);
-
-    let persons = vec![
-        Person { name: "Bob".to_string(), age: 25 },
-        Person { name: "Charlie".to_string(), age: 35 },
-    ];
-    let json_array_str = JsonConverter::convert_json_array(&persons);
-    println!("JSON Array String: {}", json_array_str);
-}

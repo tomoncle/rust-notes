@@ -7,35 +7,40 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# hello world
+### hello world
 ferris-says = "0.3.1"
-# http 支持，
+### http 支持，
 # 如果启用 blocking 模块，需要配置 features = ["blocking"],
 # 如果启用自动解析 json 模块，需要配置 features = ["blocking", "json"]
 reqwest = { version = "0.11.23", features = ["blocking", "json"] }
-# 异步支持
+### 异步支持
 tokio = { version = "1.35.1", features = ["full"] }
-# json 解析
-serde_json = "1.0.113"
+### json 解析, yaml 解析
 serde = { version = "1.0.196", features = ["derive"] }
-# html 解析
+serde_json = "1.0.113"
+serde_yaml = "0.9.31"
+### html 解析
 soup = "0.5.1"
-# 格式化输出
+### 格式化输出
 prettytable-rs = "^0.10"
-# web 框架
+### web 框架
 actix-web = "4.4.0"
-# database
-# diesel = { version = "2.1.4", features = ["sqlite", "mysql"] }
-diesel = { version = "2.1.4", features = ["sqlite"] }
+### database
+diesel = { version = "2.1.4", features = ["sqlite", "mysql"] }
+# diesel = { version = "2.1.4", features = ["sqlite"] }
 libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
 dotenv = "0.15.0"
-# 视频处理
-#ffmpeg = "0.3.0"
+### 视频处理
+# ffmpeg = "0.3.0"
+### 文件夹处理
 walkdir = "2.4.0"
-# cmd
+### cmd
 clap = { version = "4.4.5", features = ["derive"] }
-# datetime
+### datetime
 chrono = "0.4.33"
 dirs = "5.0.1"
-# 系统进程
+### 系统进程
 sysinfo = "0.30.5"
+### k8s
+kube = { version = "0.88.1", features = ["runtime", "derive"] }
+k8s-openapi = { version = "0.21.0", features = ["v1_28"] }
