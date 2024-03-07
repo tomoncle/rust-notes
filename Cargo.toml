@@ -19,8 +19,9 @@ tokio = { version = "1.35.1", features = ["full"] }
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.113"
 serde_yaml = "0.9.31"
-### html 解析
-soup = "0.5.1"
+### html 解析, soup 已经不维护了，转为 scraper
+# soup = "0.5.1"
+scraper = "0.18.1"
 ### 格式化输出
 prettytable-rs = "^0.10"
 ### web 框架

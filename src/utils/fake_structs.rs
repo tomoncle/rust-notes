@@ -22,30 +22,11 @@
  * SOFTWARE.
  */
 
-// use utils::json::JsonConverter;
-// use utils::fake_structs::Person;
-//
-// mod utils { pub mod json; pub mod fake_structs;}
-use utils::json::JsonConverter;
-use utils::fake_structs::Person;
-use utils::country::{usa, china};
+use serde::{Deserialize, Serialize};
 
-mod utils;
-
-fn main() {
-    let person = Person { name: "Alice".to_string(), age: 30 };
-    let json_str = JsonConverter::convert_json(&person);
-    println!("JSON String: {}", json_str);
-
-    let json_obj: Person = JsonConverter::convert_object(&json_str);
-    println!("Json Object: {:?}", json_obj);
-
-    let persons = vec![
-        Person { name: "Bob".to_string(), age: 25 },
-        Person { name: "Charlie".to_string(), age: 35 },
-    ];
-    let json_array_str = JsonConverter::convert_json_array(&persons);
-    println!("JSON Array String: {}", json_array_str);
-
-    println!("测试模块：{}, {}", usa::en(), china::zh())
+// 定义一个公开的结构体，来测试 json 模块中的代码
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Person {
+    pub name: String,
+    pub age: u32,
 }

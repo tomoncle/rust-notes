@@ -41,11 +41,11 @@ use serde_json::{Value, json};
  */
 /// ```
 /// // 声明模块路径
-/// mod utils { pub mod json; }
+/// mod utils { pub mod json; pub mod fake_structs;}
 ///
 /// // 引用 JsonConverter 结构体和相关函数
 /// use utils::json::JsonConverter;
-/// use utils::json::Person;
+/// use utils::fake_structs::Person;
 /// ```
 pub struct JsonConverter;
 
@@ -65,7 +65,7 @@ impl JsonConverter {
     ///     let json_obj: Person = JsonConverter::convert_object(&json_str);
     ///     println!("Json Object: {:?}", json_obj);
     /// ```
-    pub(crate) fn convert_object<T: for<'a> Deserialize<'a>>(json_str: &str) -> T {
+    pub fn convert_object<T: for<'a> Deserialize<'a>>(json_str: &str) -> T {
         serde_json::from_str(json_str).unwrap()
     }
     ///```
@@ -77,14 +77,9 @@ impl JsonConverter {
     ///     println!("JSON Array String: {}", json_array_str);
     /// ```
     #[warn(unused_imports)]
-    pub(crate) fn convert_json_array<T: Serialize>(data: &Vec<T>) -> String {
+    pub fn convert_json_array<T: Serialize>(data: &Vec<T>) -> String {
         let json_array: Vec<Value> = data.iter().map(|item| json!(item)).collect();
         serde_json::to_string(&json_array).unwrap()
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Person {
-    pub name: String,
-    pub age: u32,
-}
