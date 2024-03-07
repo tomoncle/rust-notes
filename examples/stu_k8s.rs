@@ -24,17 +24,21 @@
 
 use kube::{Api, Client};
 use k8s_openapi::api::core::v1::Pod;
+use kube::api::ListParams;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::try_default().await?;
     // let pods: Api<Pod> = Api::default_namespaced(client);
-    let pods: Api<Pod> = Api::namespaced(client, "kube-system");
+    let pods: Api<Pod> = Api::all(client);
 
-    let p = pods.get("net-tools").await?;
-    println!("\nPod 详情: \n{:?}", p.spec.clone().unwrap().containers);
-    println!("\n测试Json: \n{}", serde_json::to_string_pretty(&p).unwrap());
-    println!("\n测试yaml: \n{}", serde_yaml::to_string(&p).unwrap());
+    let list_params = ListParams::default();
+    let list_pods = pods.list(&list_params).await?;
+    for pod in list_pods.items {
+        println!("\nPod 详情: \n{:?}", pod.spec.clone().unwrap().containers);
+        println!("\n测试Json: \n{}", serde_json::to_string_pretty(&pod).unwrap());
+        println!("\n测试yaml: \n{}", serde_yaml::to_string(&pod).unwrap());
+    }
 
     Ok(())
 }
