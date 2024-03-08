@@ -21,24 +21,46 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#[allow(dead_code)] // 使用 #[allow(dead_code)] 属性来禁止编译器对未使用的代码发出警告
+async fn k8s_pods() -> Result<(), kube::Error> {
+    use kube::{Api, Client};
+    use k8s_openapi::api::core::v1::Pod;
+    use kube::api::ListParams;
 
-use kube::{Api, Client};
-use k8s_openapi::api::core::v1::Pod;
-use kube::api::ListParams;
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Client::try_default().await?;
-    // let pods: Api<Pod> = Api::default_namespaced(client);
     let pods: Api<Pod> = Api::all(client);
-
     let list_params = ListParams::default();
     let list_pods = pods.list(&list_params).await?;
     for pod in list_pods.items {
         println!("\nPod 详情: \n{:?}", pod.spec.clone().unwrap().containers);
         println!("\n测试Json: \n{}", serde_json::to_string_pretty(&pod).unwrap());
         println!("\n测试yaml: \n{}", serde_yaml::to_string(&pod).unwrap());
-    }
+    };
+    Ok(())
+}
 
+#[allow(dead_code)] // 使用 #[allow(dead_code)] 属性来禁止编译器对未使用的代码发出警告
+async fn k8s_info() -> Result<(), kube::Error> {
+    use kube::Client;
+
+    let client = Client::try_default().await?;
+    println!("\n***** default namespace *****: [{}]", client.default_namespace());
+
+    let k8s_version = client.apiserver_version().await?;
+    println!("\n******* K8S VERSION *********: \n{}", serde_yaml::to_string(&k8s_version).unwrap());
+
+    let api_groups = client.list_api_groups().await?;
+    println!("\n******* API  GROUPS *********: \n{}", serde_yaml::to_string(&api_groups).unwrap());
+
+    let api_versions = client.list_core_api_versions().await?;
+    println!("\n******* API VERSION *********: \n{}", serde_yaml::to_string(&api_versions).unwrap());
+
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), kube::Error> {
+    k8s_info().await?;
+    // k8s_pods().await?;
     Ok(())
 }
