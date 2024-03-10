@@ -35,7 +35,14 @@ fn main() {
         "windows" => println!("Current OS is Windows"),
         _ => println!("Unknown OS"),
     }
-    println!("当前执行目录：{}", std::env::current_dir().unwrap().display());
+    let exec_dir = std::env::current_dir().unwrap();
+    println!("当前执行目录：{}", exec_dir.display());
+
+    let home_dir = dirs::home_dir().unwrap_or(exec_dir);
+    println!("用户家目录～：{}", home_dir.display());
+
+    let home_dir2 =  std::env::var("HOME").unwrap();
+    println!("用户家目录～：{}", home_dir2);
 }
 
 

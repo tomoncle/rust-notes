@@ -24,7 +24,7 @@
 
 // rust http 学习
 // https://docs.rs/reqwest/latest/reqwest/blocking/struct.Response.html
-
+use std::path::Path;
 use reqwest::{Certificate, Identity};
 
 // 定义结构体
@@ -88,29 +88,54 @@ impl HttpSync {
 
     /// 测试 https 证书
     fn tls(&self) {
-        let client_cert = std::fs::read_to_string("E:\\etc\\pki\\client.pem").unwrap();
-        let client_cert_key = std::fs::read_to_string("E:\\etc\\pki\\client-key.pem").unwrap();
-        let ca_cert = std::fs::read_to_string("E:\\etc\\pki\\ca.pem").unwrap();
+        let default_os_path = std::path::PathBuf::from(dirs::home_dir().unwrap())
+            .join("Workspaces/pki");
+        let cert_path = match std::env::consts::OS {
+            "windows" => Path::new("E:\\etc\\pki"),
+            _ => default_os_path.as_path()
+        };
+
+        // x509 客户端证书
+        let client_cert_file = cert_path.join("client.pem");
+        let client_cert = std::fs::read_to_string(client_cert_file.to_str().unwrap()).unwrap();
+        // x509 客户端证书私钥
+        let client_cert_key_file = cert_path.join("client-key.pem");
+        let client_cert_key = std::fs::read_to_string(client_cert_key_file.to_str().unwrap()).unwrap();
+
+        // 这个是 x509 客户端证书和私钥 内容合并之后的内容
         let client_bundle_cert = format!("{}{}", client_cert, client_cert_key);
         // println!("[{}]",client_bundle_cert);
+        /*
+            [-----BEGIN CERTIFICATE-----
+            MIID3TCCAsWgAwIBAgIUTu0ciuUqNL6UkL7/dSq82tQMwDQYJKoZIhvcNAQEL
+            jxyPs2Itf0DbDNHuHrcdXPFWez+Kb60y4tIV/XoJ5q1a
+            -----END CERTIFICATE-----
+            -----BEGIN RSA PRIVATE KEY-----
+            BGHy7OTLSDQBOrBm1XGGHLGWTv3hGTOv+BB9lOBIcXWRkYQmBe3UWjjJf8+SD
+            NlQ9YqNKK38C5y6PbrefrWUvbhNJ0mwXEprvwMcGsIx1dE2YnCGH
+            -----END RSA PRIVATE KEY-----
+            ]
+        */
+        // 加载 客户端证书和私钥 合并之后的内容，进行加载
+        let identity = Identity::from_pem(&client_bundle_cert.as_bytes()).unwrap();
+
+        // CA 证书
+        let ca_cert_file = cert_path.join("ca.pem");
+        let ca_cert = std::fs::read_to_string(ca_cert_file.to_str().unwrap()).unwrap();
+        // 加载 CA 证书
+        let ca_certificate = Certificate::from_pem(ca_cert.as_bytes()).unwrap();
 
         // 构建Client
-        // let identity = native_tls::Identity::from_pkcs8(&client_cert.as_bytes(), &client_cert_key.as_bytes()).unwrap();
-        // let connector = native_tls::TlsConnector::builder()
-        //     .identity(identity)
-        //     .add_root_certificate(native_tls::Certificate::from_pem(ca_cert.as_bytes()).unwrap())
-        //     .danger_accept_invalid_certs(true)
-        //     .build().unwrap();
-
         let client = reqwest::blocking::Client::builder()
-            .use_rustls_tls()
-            .identity(Identity::from_pkcs8_pem(&client_cert.as_bytes(), &client_cert_key.as_bytes()).unwrap())
-            .add_root_certificate(Certificate::from_pem(ca_cert.as_bytes()).unwrap())
-            .build().unwrap();
+            .use_rustls_tls()// 启用tls配置
+            .identity(identity)// 加载客户端证书和私钥
+            .add_root_certificate(ca_certificate) // 加载CA证书
+            .build()
+            .unwrap();
 
         // 执行 HTTPS 请求
         let response = client
-            .get("https://172.16.71.220:9443")
+            .get("https://10.18.0.1:6443")
             .send()
             .expect("Send message ERROR")
             .text().unwrap();
@@ -123,14 +148,14 @@ impl HttpSync {
 fn main() {
     let http_sync = HttpSync::new();
     println!("************ GET *****************");
-    // http_sync.get();
+    http_sync.get();
     println!("************ POST *****************");
-    // http_sync.post();
+    http_sync.post();
 
-    // match http_sync.get_result() {
-    //     Ok(s) => println!("请求成功: {}", s),
-    //     Err(e) => println!("错误详情: {}", e.to_string()),
-    // };
+    match http_sync.get_result() {
+        Ok(s) => println!("请求成功: {}", s),
+        Err(e) => println!("错误详情: {}", e.to_string()),
+    };
 
     http_sync.tls();
 }
