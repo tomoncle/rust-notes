@@ -41,7 +41,7 @@ fn main() {
     let home_dir = dirs::home_dir().unwrap_or(exec_dir);
     println!("用户家目录～：{}", home_dir.display());
 
-    let home_dir2 =  std::env::var("HOME").unwrap();
+    let home_dir2 = std::env::var("HOME").unwrap();
     println!("用户家目录～：{}", home_dir2);
 }
 

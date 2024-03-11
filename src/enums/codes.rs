@@ -22,10 +22,6 @@
  * SOFTWARE.
  */
 
-///```
-/// use rust_notes::enums::codes::Number;
-/// let number = Number::Integer(99);
-/// ```
 #[derive(Debug)]
 pub enum Number {
     Integer(i32),
@@ -49,10 +45,6 @@ impl Number {
     }
 }
 
-///```
-/// use rust_notes::enums::codes::HttpStatusCode;
-/// let status = HttpStatusCode::Ok;
-/// ```
 #[derive(Debug)]
 pub enum HttpStatusCode {
     Ok = 200,

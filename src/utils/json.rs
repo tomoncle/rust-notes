@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-use serde::{Serialize, Deserialize};
-use serde_json::{Value, json};
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
 /*
 在 Rust 中，pub(crate) 和 pub 是用来修饰结构体、枚举、函数等项的访问权限修饰符。
@@ -39,47 +39,53 @@ use serde_json::{Value, json};
 因此，pub(crate) 更多地用于限制项的可见性范围，只允许在当前 crate 内部使用，而 pub 则是用于将项暴露给外部 crate 使用。
 根据项目的需求和设计，您可以根据实际情况选择适合的可见性修饰符来控制项的访问范围。
  */
-/// ```
-/// // 声明模块路径
-/// mod utils { pub mod json; pub mod fake_structs;}
-///
-/// // 引用 JsonConverter 结构体和相关函数
-/// use utils::json::JsonConverter;
-/// use utils::fake_structs::Person;
-/// ```
+
+
 pub struct JsonConverter;
 
 impl JsonConverter {
-    ///```
-    ///     let person = Person { name: "Alice".to_string(), age: 30 };
-    ///     let json_str = JsonConverter::convert_json(&person);
-    ///     println!("JSON String: {}", json_str);
-    /// ```
     pub fn convert_json<T: Serialize>(data: &T) -> String {
         serde_json::to_string(data).unwrap()
     }
 
-    ///```
-    ///     let person = Person { name: "Alice".to_string(), age: 30 };
-    ///     let json_str = JsonConverter::convert_json(&person);
-    ///     let json_obj: Person = JsonConverter::convert_object(&json_str);
-    ///     println!("Json Object: {:?}", json_obj);
-    /// ```
     pub fn convert_object<T: for<'a> Deserialize<'a>>(json_str: &str) -> T {
         serde_json::from_str(json_str).unwrap()
     }
-    ///```
-    ///     let persons = vec![
-    ///         Person { name: "Bob".to_string(), age: 25 },
-    ///         Person { name: "Charlie".to_string(), age: 35 },
-    ///     ];
-    ///     let json_array_str = JsonConverter::convert_json_array(&persons);
-    ///     println!("JSON Array String: {}", json_array_str);
-    /// ```
-    #[warn(unused_imports)]
+
     pub fn convert_json_array<T: Serialize>(data: &Vec<T>) -> String {
         let json_array: Vec<Value> = data.iter().map(|item| json!(item)).collect();
         serde_json::to_string(&json_array).unwrap()
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use crate::utils::fake_structs::Person;
+
+    use super::*;
+
+    #[test]
+    fn convert_json_test() {
+        let person = Person { name: "Alice".to_string(), age: 30 };
+        let json_str = JsonConverter::convert_json(&person);
+        assert_eq!(json_str.is_empty(), false);
+    }
+
+    #[test]
+    fn convert_json_array_test() {
+        let persons = vec![
+            Person { name: "Bob".to_string(), age: 25 },
+            Person { name: "Charlie".to_string(), age: 35 },
+        ];
+        let json_array_str = JsonConverter::convert_json_array(&persons);
+        assert_eq!(json_array_str.is_empty(), false);
+    }
+
+    #[test]
+    fn convert_object() {
+        let person = Person { name: "Alice".to_string(), age: 30 };
+        let json_str = JsonConverter::convert_json(&person);
+        let json_obj: Person = JsonConverter::convert_object(&json_str);
+        assert_eq!(json_obj.age, 30);
+    }
+}

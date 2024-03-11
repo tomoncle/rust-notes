@@ -61,6 +61,6 @@ async fn k8s_info() -> Result<(), kube::Error> {
 #[tokio::main]
 async fn main() -> Result<(), kube::Error> {
     k8s_info().await?;
-    // k8s_pods().await?;
+    k8s_pods().await?;
     Ok(())
 }

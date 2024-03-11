@@ -59,32 +59,32 @@
 //      你可以通过 use crate::garden::vegetables::Asparagus; 创建一个快捷方式，
 //      然后你就可以在作用域中只写 Asparagus 来使用该类型。
 //
-
-///
-/// 当正确配置了utils模块时(即存在 src/utils/mod.rs 或 src/utils.rs), 在 src/main.rs 中使用如下：
-///
-/// ```
-/// // 引用utils的模块下的结构体和相关函数
-/// use utils::json::JsonConverter;
-/// use utils::fake_structs::Person;
-///
-/// // 声明了一个叫做utils的模块
-/// mod utils;
-/// ```
-///
-/// 假如没有 src/utils/mod.rs文件，也没有 src/utils.rs 文件， src/main.rs 是无法直接引用 utils 模块的，因为
-///
-/// 编译器找不到名为 utils 的模块（即不存在 src/utils/mod.rs 或 src/utils.rs）,
-/// 那可使用下面方法引用 src/utils/json.rs 中的代码
-///
-/// ```
-/// // 声明模块路径
-/// mod utils { pub mod json; pub mod fake_structs;}
-///
-/// // 引用 JsonConverter 结构体和相关函数
-/// use utils::json::JsonConverter;
-/// use utils::fake_structs::Person;
-///```
+//
+//
+// 当正确配置了utils模块时(即存在 src/utils/mod.rs 或 src/utils.rs), 在 src/main.rs 中使用如下：
+//
+// ```
+// // 引用utils的模块下的结构体和相关函数
+// use utils::json::JsonConverter;
+// use utils::fake_structs::Person;
+//
+// // 声明了一个叫做utils的模块
+// mod utils;
+// ```
+//
+// 假如没有 src/utils/mod.rs文件，也没有 src/utils.rs 文件， src/main.rs 是无法直接引用 utils 模块的，因为
+//
+// 编译器找不到名为 utils 的模块（即不存在 src/utils/mod.rs 或 src/utils.rs）,
+// 那可使用下面方法引用 src/utils/json.rs 中的代码
+//
+// ```
+// // 声明模块路径
+// mod utils { pub mod json; pub mod fake_structs;}
+//
+// // 引用 JsonConverter 结构体和相关函数
+// use utils::json::JsonConverter;
+// use utils::fake_structs::Person;
+//```
 
 
 // 表示：当前 utils 模块包含了在 src/utils/json.rs 中的代码

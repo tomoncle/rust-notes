@@ -22,7 +22,5 @@
  * SOFTWARE.
  */
 
-// 想要在 src/tests 中进行测试的 当前项目的包或方法，需要在 src/lib.rs 中引用
-pub mod utils;
-pub mod enums;
-pub mod k8s;
+pub mod models;
+pub mod api;

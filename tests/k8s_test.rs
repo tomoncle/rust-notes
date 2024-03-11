@@ -22,7 +22,11 @@
  * SOFTWARE.
  */
 
-// 想要在 src/tests 中进行测试的 当前项目的包或方法，需要在 src/lib.rs 中引用
-pub mod utils;
-pub mod enums;
-pub mod k8s;
+use rust_notes::k8s::api;
+
+#[test]
+fn join_path_test() {
+    assert_eq!(
+        api::join_path(&["https://127.0.0.1:6443", "api"]),
+        "https://127.0.0.1:6443/api")
+}
