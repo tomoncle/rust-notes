@@ -28,5 +28,89 @@ use rust_notes::k8s::api;
 fn join_path_test() {
     assert_eq!(
         api::join_path(&["https://127.0.0.1:6443", "api"]),
-        "https://127.0.0.1:6443/api")
+        "https://127.0.0.1:6443/api"
+    )
+}
+
+#[cfg(test)]
+mod k8s_api_test {
+    use rust_notes::k8s::api::HttpClient;
+    use rust_notes::k8s::models::HttpKubeConfig;
+
+    const KUBE_CONFIG_FILE: &str = "E:\\etc\\k8s\\kubeconfig";
+
+    fn check() -> bool {
+        if let Ok(metadata) = std::fs::metadata(KUBE_CONFIG_FILE) {
+            return metadata.is_file();
+        }
+        false
+    }
+
+    #[test]
+    fn check_url() {
+        assert_eq!(check(), true);
+        let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
+        let http_client = HttpClient::new(config);
+        assert_eq!(http_client.url(&["api", "v1", "pods"]).ends_with("/api/v1/pods"), true);
+    }
+
+    #[test]
+    fn apis_list() {
+        assert_eq!(check(), true);
+        let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
+        let http_client = HttpClient::new(config);
+        println!("{}", http_client.apis())
+    }
+
+    #[test]
+    fn api_groups() {
+        assert_eq!(check(), true);
+        let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
+        let http_client = HttpClient::new(config);
+        let url = http_client.url(&["/api/v1"]);
+        let response = http_client.client.get(url).send().unwrap();
+        println!("{}", response.text().unwrap())
+    }
+
+    #[test]
+    fn pods() {
+        assert_eq!(check(), true);
+        let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
+        let http_client = HttpClient::new(config);
+        // kubectl get po -n kube-system --field-selector=status.phase=Running
+        // /api/v1/namespaces/kube-system/pods?fieldSelector=status.phase%3DRunning&limit=500
+        //
+        // kubectl get po -n kube-system -l tier=control-plane
+        let url = http_client.url(&[
+            "/api/v1/namespaces",
+            "kube-system",
+            "pods",
+            "?",
+            "labelSelector=tier%3Dcontrol-plane",
+            "&",
+            "limit=500",
+        ]);
+        let response = http_client.client.get(url).send().unwrap();
+        println!("{}", response.text().unwrap())
+    }
+
+    #[test]
+    fn namespaces() {
+        assert_eq!(check(), true);
+        let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
+        let http_client = HttpClient::new(config);
+        let url = http_client.url(&["/api/v1/namespaces?limit=500"]);
+        let response = http_client.client.get(url).send().unwrap();
+        println!("{}", response.text().unwrap());
+    }
+
+    #[test]
+    fn nodes() {
+        assert_eq!(check(), true);
+        let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
+        let http_client = HttpClient::new(config);
+        let url = http_client.url(&["/api/v1/nodes?limit=500"]);
+        let response = http_client.client.get(url).send().unwrap();
+        println!("{}", response.text().unwrap());
+    }
 }

@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+use std::path::Path;
+
 use base64::Engine;
 use kube::config::Kubeconfig;
 use secrecy::ExposeSecret;
@@ -49,7 +51,17 @@ pub struct HttpKubeConfig {
 }
 
 impl HttpKubeConfig {
-    pub fn from_kube_config(kube_config: Kubeconfig) -> Self {
+    pub fn from_yaml(text: &str) -> Self {
+        let kube_config = Kubeconfig::from_yaml(text).unwrap();
+        HttpKubeConfig::from_kube_config(kube_config)
+    }
+
+    pub fn read_from<P: AsRef<Path>>(path: P) -> Self {
+        let kube_config = Kubeconfig::read_from(path).unwrap();
+        HttpKubeConfig::from_kube_config(kube_config)
+    }
+
+    fn from_kube_config(kube_config: Kubeconfig) -> Self {
         let mut http_kube_config = HttpKubeConfig {
             certificate_authority_data: String::new(),
             server: String::new(),

@@ -22,14 +22,13 @@
  * SOFTWARE.
  */
 
-
 use reqwest::{Certificate, Identity};
 
 use crate::k8s::models::HttpKubeConfig;
 
 pub struct HttpClient {
     server: String,
-    client: reqwest::blocking::Client,
+    pub client: reqwest::blocking::Client,
 }
 
 impl HttpClient {
@@ -55,7 +54,7 @@ impl HttpClient {
             .expect("健康检查失败!").status().is_success()
     }
 
-    pub fn api_list(&self) -> String {
+    pub fn apis(&self) -> String {
         let response = self.client
             .get(&self.server)
             .send()
@@ -63,12 +62,21 @@ impl HttpClient {
         let json: serde_json::Value = response.json().unwrap();
         json.to_string()
     }
+
+    pub fn url(&self, vals: &[&str]) -> String {
+        let mut arr: Vec<&str> = vec![];
+        arr.push(&self.server);
+        for val in vals {
+            arr.push(val);
+        }
+        join_path(arr.as_slice())
+    }
 }
 
 
-pub fn join_path(parts: &[&str]) -> String {
+pub fn join_path(paths: &[&str]) -> String {
     let mut result = String::new();
-    for (index, part) in parts.iter().enumerate() {
+    for (index, part) in paths.iter().enumerate() {
         if index == 0 {
             result.push_str(part.trim_end_matches("/"));
         } else {
@@ -130,6 +138,6 @@ users:
         let config = HttpKubeConfig::from_kube_config(kube_config);
         let http_client = HttpClient::new(config.clone());
         let url = join_path(&[&http_client.server, "/version"]);
-        println!("{}", http_client.client.get(url).send().unwrap().text().unwrap())
+        assert_eq!(http_client.client.get(url).send().unwrap().status().is_success(), true);
     }
 }
