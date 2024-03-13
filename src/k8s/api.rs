@@ -63,10 +63,10 @@ impl HttpClient {
         json.to_string()
     }
 
-    pub fn url(&self, vals: &[&str], args: &[&str]) -> String {
+    pub fn url(&self, paths: &[&str], args: &[&str]) -> String {
         let mut arr: Vec<&str> = vec![];
         arr.push(&self.server);
-        for val in vals {
+        for val in paths {
             arr.push(val);
         }
         let urls = join_path(arr.as_slice());
@@ -106,7 +106,7 @@ mod tests {
 clusters:
 - cluster:
     certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJWHBjREwrVTlJMEl3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TXpFd01UVXhOVE0xTWpCYUZ3MHpNekV3TVRJeE5UUXdNakJhTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUUREM0xzWkJFZ29kK29kMEl6c0l0VVdEN1hkbzZUY3FKa2dQMFZhbnVMMmpCZi9QUmVTM2kyNWxvMnMKRFcyM3VjM0FtOW1yb2xxeG8xZXhqSnltYlhTZzZwbVhCcEZVR2hVaW9DVHhPSk90TFdwR2FBVCtKT1dNQk8wcwoxRUordFZ3NmNkSk42eTE0QmNTWXNTcXUxL3phY0Z3NE10ckVMZUwzQUNrR0tlRDRuako3UXMySVFFUkVWeXNSCkhQNnl6ekx6cmNndzYwTnZPcm5ZNUIxd2V1dEZkUlJDYVdUV3FuS0lycXVkTy81K1hrMXJodTQvdGFDaGFIVmUKcFZFNTlITnF4emU5VkFrL0hzNWw5NGcwRFgyYnZGeTV0U0ZuT0ZEUHZuWjdlRU1rWmZNd2cxNjNPbUVMUzlQQwpFbHV1eU8xdjZDRTgzMjA2OEFWYWxFY1R5TkN4QWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJRMDJJQXpWQ25wMExNQXJTcml4dkFTT01HRURUQVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQjZiODlRWmRGdgpna2llV0lvb2xFK2Jaenh6dENzRXg2UTVxNEM4aVJ2cW5UVkVsUzl6T3gwRnU2dEhxSk9YWVZSR3dHU0t1b2NFCmx4SUhBKzgzMnhRLzVEbUs5YkN1dFE2RkFRMkVFYkIyUnZwSDhxS0RHa3V5b3MwYU03QWE0clN3RDNYR2pmR2oKeHl1NVBxMFBxdlZGNFl1Y3RGaGlzVCtUOE1HcGo1N1QxWlpyMitidE0yWnJFY0dHanNaaDNYM1V2WENTUVBmeQpTOHB4d0c4YXh6Z1ZqcUk1WjdUYjkwWmJCVk1kNVN4YmZhcDJiZnEyQTlvc2hIWG1zMjBmTDg0YktoNTgzcFJVCjMwamc3eVpHZU5HbVRSSk9IUENkTVBjQnVCT3VNVjg0TnE0RzFmV1NtR0dic1pNRVgzU2hrbTdEejFkTGxkNlkKRmExMVcyZ1RmbHh1Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
-    server: https://api-server.k8s.local:9443
+    server: https://172.16.71.55:6443
   name: kubernetes
 contexts:
 - context:
