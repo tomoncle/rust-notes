@@ -36,6 +36,7 @@ fn join_path_test() {
 mod k8s_api_test {
     use rust_notes::k8s::api::HttpClient;
     use rust_notes::k8s::models::HttpKubeConfig;
+    use rust_notes::utils::json::JsonConverter;
 
     const KUBE_CONFIG_FILE: &str = "E:\\etc\\k8s\\kubeconfig";
 
@@ -51,7 +52,7 @@ mod k8s_api_test {
         assert_eq!(check(), true);
         let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
         let http_client = HttpClient::new(config);
-        assert_eq!(http_client.url(&["api", "v1", "pods"]).ends_with("/api/v1/pods"), true);
+        assert_eq!(http_client.url(&["api", "v1", "pods"], &[]).ends_with("/api/v1/pods"), true);
     }
 
     #[test]
@@ -59,7 +60,7 @@ mod k8s_api_test {
         assert_eq!(check(), true);
         let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
         let http_client = HttpClient::new(config);
-        println!("{}", http_client.apis())
+        println!("{}", http_client.apis());
     }
 
     #[test]
@@ -67,7 +68,7 @@ mod k8s_api_test {
         assert_eq!(check(), true);
         let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
         let http_client = HttpClient::new(config);
-        let url = http_client.url(&["/api/v1"]);
+        let url = http_client.url(&["/api/v1"], &[]);
         let response = http_client.client.get(url).send().unwrap();
         println!("{}", response.text().unwrap())
     }
@@ -81,17 +82,17 @@ mod k8s_api_test {
         // /api/v1/namespaces/kube-system/pods?fieldSelector=status.phase%3DRunning&limit=500
         //
         // kubectl get po -n kube-system -l tier=control-plane
-        let url = http_client.url(&[
-            "/api/v1/namespaces",
-            "kube-system",
-            "pods",
-            "?",
-            "labelSelector=tier%3Dcontrol-plane",
-            "&",
-            "limit=500",
-        ]);
+        let url = http_client.url(
+            &["/api/v1/namespaces", "kube-system", "pods", ],
+            &["labelSelector=tier%3Dcontrol-plane", "limit=500"]);
+        println!("{}", url);
         let response = http_client.client.get(url).send().unwrap();
-        println!("{}", response.text().unwrap())
+        let json_obj: serde_json::Value = JsonConverter::convert_object(&response.text().unwrap());
+        let default_item = serde_json::json!([]);
+        let items = json_obj.get("items").unwrap_or(&default_item);
+        for pod in items.as_array().unwrap() {
+            println!("Pod: {} -> {}", pod["metadata"]["name"], pod["metadata"]["labels"]["tier"])
+        }
     }
 
     #[test]
@@ -99,7 +100,7 @@ mod k8s_api_test {
         assert_eq!(check(), true);
         let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
         let http_client = HttpClient::new(config);
-        let url = http_client.url(&["/api/v1/namespaces?limit=500"]);
+        let url = http_client.url(&["/api/v1/namespaces"], &["limit=500"]);
         let response = http_client.client.get(url).send().unwrap();
         println!("{}", response.text().unwrap());
     }
@@ -109,7 +110,7 @@ mod k8s_api_test {
         assert_eq!(check(), true);
         let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
         let http_client = HttpClient::new(config);
-        let url = http_client.url(&["/api/v1/nodes?limit=500"]);
+        let url = http_client.url(&["/api/v1/nodes"], &["limit=500"]);
         let response = http_client.client.get(url).send().unwrap();
         println!("{}", response.text().unwrap());
     }

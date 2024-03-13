@@ -63,13 +63,19 @@ impl HttpClient {
         json.to_string()
     }
 
-    pub fn url(&self, vals: &[&str]) -> String {
+    pub fn url(&self, vals: &[&str], args: &[&str]) -> String {
         let mut arr: Vec<&str> = vec![];
         arr.push(&self.server);
         for val in vals {
             arr.push(val);
         }
-        join_path(arr.as_slice())
+        let urls = join_path(arr.as_slice());
+        let args = join_args(args);
+        if args.is_empty() {
+            urls
+        } else {
+            format!("{}?{}", urls, args)
+        }
     }
 }
 
@@ -85,6 +91,11 @@ pub fn join_path(paths: &[&str]) -> String {
         }
     }
     result
+}
+
+
+pub fn join_args(args: &[&str]) -> String {
+    args.iter().map(|&arg| arg).collect::<Vec<&str>>().join("&")
 }
 
 #[cfg(test)]
@@ -121,22 +132,16 @@ users:
     #[test]
     #[cfg(feature = "local_runtime")]
     fn healthy_test() {
-        use kube::config::Kubeconfig;
-
-        let kube_config = Kubeconfig::from_yaml(KUBE_CONFIG).unwrap();
-        let config = HttpKubeConfig::from_kube_config(kube_config);
-        let http_client = HttpClient::new(config.clone());
+        let config = HttpKubeConfig::from_yaml(KUBE_CONFIG);
+        let http_client = HttpClient::new(config);
         assert_eq!(http_client.healthy(), true);
     }
 
     #[test]
     #[cfg(feature = "local_runtime")]
     fn version_test() {
-        use kube::config::Kubeconfig;
-
-        let kube_config = Kubeconfig::from_yaml(KUBE_CONFIG).unwrap();
-        let config = HttpKubeConfig::from_kube_config(kube_config);
-        let http_client = HttpClient::new(config.clone());
+        let config = HttpKubeConfig::from_yaml(KUBE_CONFIG);
+        let http_client = HttpClient::new(config);
         let url = join_path(&[&http_client.server, "/version"]);
         assert_eq!(http_client.client.get(url).send().unwrap().status().is_success(), true);
     }
