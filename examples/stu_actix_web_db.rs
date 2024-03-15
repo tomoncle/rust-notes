@@ -25,11 +25,12 @@
 // https://github.com/robatipoor/rustfulapi
 
 use actix_web::{App, get, HttpServer, Responder, web};
+use diesel::connection::SimpleConnection;
 use diesel::prelude::*;
 // use diesel::mysql::MysqlConnection;
 // use diesel::sqlite::SqliteConnection;
 use dotenv::dotenv;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 struct RestHttpResponse<T> {
@@ -72,40 +73,98 @@ struct ITest {
     name: String,
 }
 
-/// 连接到MySQL数据库 ???
-///
-/// windows: 编译错误: could not find native static library `mysqlclient`, perhaps an -L flag is missing?
-///
-/// 1.安装Mysql：For windows install https://downloads.mysql.com/archives/community/
-///
-/// 2.配置环境变量：export MYSQLCLIENT_LIB_DIR="C:\Program Files\MySQL\MySQL Server 5.7\lib"
-///
-/// 3.执行命令：cargo install diesel_cli --no-default-features --features mysql
-fn establish_connection() -> diesel::mysql::MysqlConnection {
-    dotenv().ok();
+/*
+连接到MySQL数据库 ???
+windows: 编译错误: could not find native static library `mysqlclient`, perhaps an -L flag is missing?
 
+1.安装Mysql：For windows install https://downloads.mysql.com/archives/community/
+2.配置环境变量：export MYSQLCLIENT_LIB_DIR="C:\Program Files\MySQL\MySQL Server 5.7\lib"
+3.执行命令：cargo install diesel_cli --no-default-features --features mysql
+4.执行命令：cargo clean
+*/
+fn mysql_connection() -> MysqlConnection {
+    dotenv().ok();
     // let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let database_url = "mysql://root:root@127.0.0.1:3306/db_rust";
-    diesel::mysql::MysqlConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
+    let err_msg = &format!("Error connecting to {}", database_url);
+    MysqlConnection::establish(&database_url).expect(err_msg)
 }
 
 // 连接 SQLite 数据库
-// fn establish_connection() -> diesel::sqlite::SqliteConnection {
-//     dotenv().ok();
-//     // let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-//     let database_url = "sqlite://db_rust.sqlite";
-//     diesel::sqlite::SqliteConnection::establish(&database_url)
-//         .expect(&format!("Error connecting to {}", database_url))
-// }
+fn sqlite_connection() -> SqliteConnection {
+    dotenv().ok();
+    // let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = "sqlite://db_rust.sqlite";
+    let err_msg = &format!("Error connecting to {}", database_url);
+    SqliteConnection::establish(&database_url).expect(err_msg)
+}
+
+/*
+连接到postgresql数据库 ???
+windows: 编译错误: LINK : fatal error LNK1181: 无法打开输入文件“libpq.lib”
+
+1.安装postgresql: For windows install https://www.postgresql.org/download/windows/
+2.配置环境变量: export PQ_LIB_DIR="C:\Program Files\Postgresql-16.2-1\pgsql\lib"
+3.执行命令: cargo install diesel_cli --no-default-features --features postgres
+4.执行命令: cargo clean
+*/
+// 连接 postgresql 数据库
+fn postgresql_connection() -> PgConnection {
+    dotenv().ok();
+    // let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = "postgres://postgres:postgres@172.16.61.135:5432/db_rust";
+    let err_msg = &format!("Error connecting to {}", database_url);
+    PgConnection::establish(&database_url).expect(err_msg)
+}
+
+
+struct DBDriver<T> {
+    connection: T,
+}
+
+impl DBDriver<PgConnection> {
+    fn new(url: &str) -> Self {
+        DBDriver {
+            connection: PgConnection::establish(url.clone()).expect("connect error："),
+        }
+    }
+}
+
+impl DBDriver<SqliteConnection> {
+    fn new(url: &str) -> Self {
+        DBDriver {
+            connection: SqliteConnection::establish(url.clone()).expect("connect error："),
+        }
+    }
+}
+
+impl DBDriver<MysqlConnection> {
+    fn new(url: &str) -> Self {
+        DBDriver {
+            connection: MysqlConnection::establish(url.clone()).expect("connect error："),
+        }
+    }
+}
+
 
 // 查询操作示例
 async fn index() -> impl Responder {
     use self::users::dsl::*;
+    let connection_url = "postgres://postgres:postgres@172.16.61.135:5432/db_rust";
 
-    let mut connection = establish_connection();
+    let mut conn: Box<dyn SimpleConnection> = if connection_url.to_lowercase().starts_with("mysql:") {
+        Box::new(DBDriver::<MysqlConnection>::new(connection_url).connection)
+    } else if connection_url.to_lowercase().starts_with("postgres:") {
+        Box::new(DBDriver::<PgConnection>::new(connection_url).connection)
+    } else if connection_url.to_lowercase().starts_with("sqlite:") {
+        Box::new(DBDriver::<SqliteConnection>::new(connection_url).connection)
+    } else {
+        Box::new(DBDriver::<SqliteConnection>::new(connection_url).connection)
+    };
+
+    // let mut conn = DBDriver::<PgConnection>::new(connection_url).connection;
     let results = users.limit(5)
-        .load::<User>(&mut connection)
+        .load::<User>(&mut conn)
         .expect("Error loading users");
 
     let mut array = serde_json::json!([]);
@@ -125,7 +184,7 @@ async fn index() -> impl Responder {
 async fn test(path: web::Path<String>) -> impl Responder {
     use self::t_test::dsl::*;
 
-    let mut connection = establish_connection();
+    let mut connection = postgresql_connection();
     let results = t_test.limit(5)
         .load::<ITest>(&mut connection)
         .expect("Error loading t_test");

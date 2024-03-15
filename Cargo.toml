@@ -31,7 +31,7 @@ prettytable-rs = "^0.10"
 ### web 框架
 actix-web = "4.4.0"
 ### database
-diesel = { version = "2.1.4", features = ["sqlite", "mysql"] }
+diesel = { version = "2.1.4", features = ["sqlite", "mysql", "postgres"] }
 # diesel = { version = "2.1.4", features = ["sqlite"] }
 libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
 dotenv = "0.15.0"
