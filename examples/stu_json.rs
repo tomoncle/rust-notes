@@ -67,6 +67,15 @@ fn object_to_json() {
     // 用serde_json::to_string序列化
     println!("测试res1：{}", serde_json::to_string(&res1).unwrap());
 
+    // 用serde_json::json!生成JSON
+    //
+    // serde_json::json!宏是用于生成JSON字面量的宏
+    //      json 是该宏的名称
+    //      ! 表明它是一个宏(macro)
+    //      (...) 里面是参数传入该宏
+    // 该宏会将传入的数据结构编译成一个 JSON 字面量。
+    // 举例来说,serde_json::json!({...}) 会编译生成一个等价于 '{"name":"John","age":30}' 字符串字面量。
+    // 所以 ! 符号标识它是一个 macro,而不是普通函数,并且需要用括号传入参数
     let res2 = HttpResponse {
         code: 200,
         message: "OK".to_string(),
