@@ -118,22 +118,34 @@ fn postgresql_connection() -> PgConnection {
     PgConnection::establish(&database_url).expect(err_msg)
 }
 
+// 定义宏来打印 SQL 查询语句
+macro_rules! show_sql {
+    ($query:expr) => {
+        // let sql_query = debug_query::<diesel::pg::Pg, _>(&query);
+        // debug!("{:?}", sql_query);
+        match env::var("SHOW_SQL") {
+            Ok(s) => {
+                if s == "true"{
+                  debug!("\x1b[31m{:?}\x1b[0m", diesel::debug_query::<diesel::pg::Pg, _>($query));
+                }
+            }
+            Err(_) => {}
+        };
+    };
+}
+
 
 // 查询操作示例
 async fn index() -> impl Responder {
     use self::users::dsl::*;
-    let mut conn = postgresql_connection();
-
-    // let results = users.limit(5)
+    let conn = &mut postgresql_connection();
+    // let results = users
+    //     .limit(5)
     //     .load::<User>(&mut conn)
     //     .expect("Error loading users");
     let query = users.limit(5);
-    let sql_query = debug_query::<diesel::pg::Pg, _>(&query);
-    debug!("{:?}", sql_query);
-
-    let results = query.load::<User>(&mut conn)
-        .expect("Error loading users");
-
+    show_sql!(&query);
+    let results = query.load::<User>(conn).unwrap();
     let mut array = serde_json::json!([]);
     for user in results {
         let obj = serde_json::json!(&user);
@@ -151,10 +163,11 @@ async fn index() -> impl Responder {
 async fn test(path: web::Path<String>) -> impl Responder {
     use self::t_test::dsl::*;
 
-    let mut connection = postgresql_connection();
-    let results = t_test.limit(5)
-        .load::<ITest>(&mut connection)
-        .expect("Error loading t_test");
+    let conn = &mut postgresql_connection();
+    let results = t_test
+        .limit(5)
+        .load::<ITest>(conn)
+        .unwrap();
 
     let mut array = serde_json::json!([]);
     for test in results {
@@ -188,7 +201,7 @@ async fn hello(path: web::Path<String>) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "debug");
-    // env::set_var("RUST_LOG_STYLE", "always");
+    env::set_var("SHOW_SQL", "true");
     env_logger::init();
 
     info!("App starting on: {}", "http://127.0.0.1:8080");
