@@ -33,6 +33,7 @@ fn join_path_test() {
 }
 
 #[cfg(test)]
+#[cfg(feature = "local_runtime")]
 mod k8s_api_test {
     use rust_notes::k8s::api::HttpClient;
     use rust_notes::k8s::models::HttpKubeConfig;
