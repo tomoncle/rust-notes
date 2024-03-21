@@ -70,24 +70,32 @@ impl HttpKubeConfig {
         };
 
         if let Some(cluster) = kube_config.clusters.first() {
-            if let Some(ca) = &cluster.cluster.as_ref()
-                .and_then(|c| c.certificate_authority_data.as_deref()) {
-                http_kube_config.certificate_authority_data = HttpKubeConfig::decode(ca.to_string());
+            if let Some(ca) = &cluster
+                .cluster
+                .as_ref()
+                .and_then(|c| c.certificate_authority_data.as_deref())
+            {
+                http_kube_config.certificate_authority_data =
+                    HttpKubeConfig::decode(ca.to_string());
             }
-            if let Some(server) = &cluster.cluster.as_ref()
-                .and_then(|c| c.server.as_ref()) {
+            if let Some(server) = &cluster.cluster.as_ref().and_then(|c| c.server.as_ref()) {
                 http_kube_config.server = server.to_string();
             }
         }
 
         if let Some(user) = kube_config.auth_infos.first() {
-            if let Some(cert) = &user.auth_info.as_ref()
-                .and_then(|u| u.client_certificate_data.as_deref()) {
+            if let Some(cert) = &user
+                .auth_info
+                .as_ref()
+                .and_then(|u| u.client_certificate_data.as_deref())
+            {
                 http_kube_config.client_certificate_data = HttpKubeConfig::decode(cert.to_string());
             }
-            if let Some(key) = &user.auth_info.as_ref()
-                .and_then(|u| u.client_key_data.as_ref()
-                    .map(|secret| secret.expose_secret().as_str())) {
+            if let Some(key) = &user.auth_info.as_ref().and_then(|u| {
+                u.client_key_data
+                    .as_ref()
+                    .map(|secret| secret.expose_secret().as_str())
+            }) {
                 http_kube_config.client_key_data = HttpKubeConfig::decode(key.to_string());
             }
         }
@@ -95,9 +103,12 @@ impl HttpKubeConfig {
     }
 
     fn decode(encode_data: String) -> String {
-        String::from_utf8_lossy(&base64::engine::general_purpose::STANDARD
-            .decode(encode_data.as_bytes())
-            .unwrap()).to_string()
+        String::from_utf8_lossy(
+            &base64::engine::general_purpose::STANDARD
+                .decode(encode_data.as_bytes())
+                .unwrap(),
+        )
+            .to_string()
     }
 }
 

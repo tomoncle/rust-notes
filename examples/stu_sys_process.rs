@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 use serde_json::json;
-use sysinfo::{System};
+use sysinfo::System;
 
 fn main() {
     let mut system = System::new_all();

@@ -51,4 +51,3 @@ fn main() {
     let post = create_post(connection, title, &body);
     println!("\nSaved draft {} with id {}", title, post.id);
 }
-

@@ -23,7 +23,7 @@
  */
 
 // #[macro_use] extern crate prettytable;
-use prettytable::{Table, Row, Cell, row};
+use prettytable::{row, Cell, Row, Table};
 
 fn main() {
     // Create the table
@@ -36,7 +36,8 @@ fn main() {
     table.add_row(Row::new(vec![
         Cell::new("foobar2"),
         Cell::new("bar2"),
-        Cell::new("foo2")]));
+        Cell::new("foo2"),
+    ]));
 
     // Print the table to stdout
     table.printstd();

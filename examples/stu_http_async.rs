@@ -39,25 +39,33 @@ impl HttpAsync {
         }
     }
     async fn get(&self) {
-        let response = &self.client.get(&self.url)
+        let response = &self
+            .client
+            .get(&self.url)
             .header("token", "123456")
             .query(&[("username", "tom")])
             .send()
-            .await.expect("错误详情")
+            .await
+            .expect("错误详情")
             .text()
-            .await.unwrap();
+            .await
+            .unwrap();
         println!("HttpAsync GET Response body: {}\n", response);
     }
 
     async fn post(&self) {
         let body = "{ \"title\": \"Hello\" }";
-        let text = &self.client.post(&self.url)
+        let text = &self
+            .client
+            .post(&self.url)
             .header("Content-Type", "application/json")
             .body(body)
             .send()
-            .await.expect("错误详情")
+            .await
+            .expect("错误详情")
             .text()
-            .await.unwrap();
+            .await
+            .unwrap();
         println!("POST Response body: {}\n", text);
     }
 }

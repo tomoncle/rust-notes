@@ -45,4 +45,3 @@ fn main() {
         .unwrap();
     println!("Published post {}", post.title);
 }
-

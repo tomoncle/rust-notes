@@ -124,7 +124,6 @@ fn json_to_struct() {
     println!("User: {:?}", user);
 }
 
-
 /// json 组装
 fn json_assemble() {
     // 创建一个空的 JSON 对象
@@ -143,12 +142,17 @@ fn json_assemble() {
     let pretty_json = serde_json::to_string_pretty(&json_obj).unwrap();
     println!("Json格式化: {}", pretty_json);
 
-
     // 创建一个空的 Json 数组
     let mut json_array = serde_json::json!([]);
     // 添加 JSON 对象到数组
-    json_array.as_array_mut().unwrap().push(serde_json::json!({"name":"github"}));
-    json_array.as_array_mut().unwrap().push(serde_json::json!({"name":"google"}));
+    json_array
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({"name":"github"}));
+    json_array
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({"name":"google"}));
     // 打印 json 数组
     // [{"name":"github"},{"name":"google"}]
     println!("json数组: {}", json_array);

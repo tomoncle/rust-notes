@@ -54,4 +54,3 @@ fn main() {
         Err(_) => println!("An error occured while fetching post {}", post_id),
     }
 }
-

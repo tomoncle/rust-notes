@@ -22,6 +22,5 @@
  * SOFTWARE.
  */
 
-pub mod status;
 pub mod codes;
-
+pub mod status;

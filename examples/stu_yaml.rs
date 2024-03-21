@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-
 const KUBE_CONFIG: &str = r###"apiVersion: v1
 clusters:
 - cluster:
@@ -45,7 +44,6 @@ users:
 "###;
 
 fn main() {
-
     // 将YAML字符串解析为serde_yaml::Value
     let yaml_value: serde_yaml::Value = serde_yaml::from_str(KUBE_CONFIG).unwrap();
 
@@ -56,9 +54,16 @@ fn main() {
     if let Some(clusters) = yaml_value["clusters"].as_sequence() {
         for cluster in clusters {
             if let Some(cluster_map) = cluster.as_mapping() {
-                if let Some(cluster_data) = cluster_map.get(&serde_yaml::Value::String("cluster".to_string())) {
-                    if let Some(certificate_authority_data) = cluster_data["certificate-authority-data"].as_str() {
-                        println!("certificate-authority-data: {}", !certificate_authority_data.is_empty());
+                if let Some(cluster_data) =
+                    cluster_map.get(&serde_yaml::Value::String("cluster".to_string()))
+                {
+                    if let Some(certificate_authority_data) =
+                        cluster_data["certificate-authority-data"].as_str()
+                    {
+                        println!(
+                            "certificate-authority-data: {}",
+                            !certificate_authority_data.is_empty()
+                        );
                         ca = certificate_authority_data;
                     }
                 }
@@ -69,9 +74,16 @@ fn main() {
     if let Some(users) = yaml_value["users"].as_sequence() {
         for user in users {
             if let Some(user_map) = user.as_mapping() {
-                if let Some(user_data) = user_map.get(&serde_yaml::Value::String("user".to_string())) {
-                    if let Some(client_certificate_data) = user_data["client-certificate-data"].as_str() {
-                        println!("client-certificate-data: {}", !client_certificate_data.is_empty());
+                if let Some(user_data) =
+                    user_map.get(&serde_yaml::Value::String("user".to_string()))
+                {
+                    if let Some(client_certificate_data) =
+                        user_data["client-certificate-data"].as_str()
+                    {
+                        println!(
+                            "client-certificate-data: {}",
+                            !client_certificate_data.is_empty()
+                        );
                         cert = client_certificate_data;
                     }
                     if let Some(client_key_data) = user_data["client-key-data"].as_str() {
@@ -83,5 +95,8 @@ fn main() {
         }
     }
 
-    println!("\n\nCA: {}, \n\nCERT: {}, \n\nCERT-KEY: {}", ca, cert, cert_key)
+    println!(
+        "\n\nCA: {}, \n\nCERT: {}, \n\nCERT-KEY: {}",
+        ca, cert, cert_key
+    )
 }

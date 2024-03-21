@@ -38,7 +38,7 @@ fn main() {
     // &* 符号： &*符号通常不会在Rust中直接使用，但是可以通过它们来理解引用和解引用的组合。
     //         &*符号在一起使用时，&*表示先解引用再引用。
     let x = 5;
-    let y = &x;  // 创建对x的引用
+    let y = &x; // 创建对x的引用
     let z = &*y; // 先解引用y，再引用得到z对x的引用
     println!("x 的值为: {}", x);
     println!("z 的值为: {}", *z); // 解引用z来访问x的值
@@ -69,7 +69,6 @@ fn main() {
     *y += 1; // 通过可变引用修改x的值
     println!("y 的值为: {}", y); // 当使用y这个可变引用时，需要在调用x变量之前，确保可变引用y的作用域在输出x的值之前结束
     println!("x 的值为: {}", x); // 输出修改后的x的值
-
 
     let str = String::from("hello");
     let ptr = &str as *const String; // 将一个 &str 类型的引用转换为一个指向 String 类型的不可变原生指针(*const String)

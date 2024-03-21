@@ -32,7 +32,9 @@ CREATE TABLE posts (
   published BOOLEAN NOT NULL DEFAULT FALSE
 )
 */
-#[derive(Queryable, Selectable)] //Queryable将生成从 SQL 查询加载Post结构所需的所有代码; Selectable根据模型类型构造匹配的 select 子句
+#[derive(Queryable, Selectable)]
+// Queryable 将生成从 SQL 查询加载Post结构所需的所有代码;
+// Selectable 根据模型类型构造匹配的 select 子句
 #[diesel(table_name = crate::schema::posts)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Post {
@@ -41,7 +43,6 @@ pub struct Post {
     pub body: String,
     pub published: bool,
 }
-
 
 use crate::schema::posts;
 

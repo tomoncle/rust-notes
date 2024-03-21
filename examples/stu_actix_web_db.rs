@@ -26,7 +26,7 @@
 
 use std::env;
 
-use actix_web::{App, get, HttpServer, middleware, Responder, web};
+use actix_web::{get, middleware, web, App, HttpServer, Responder};
 use diesel::debug_query;
 use diesel::prelude::*;
 use dotenv::dotenv;
@@ -59,16 +59,14 @@ table! {
 }
 
 // 定义用户模型
-#[derive(Queryable)]
-#[derive(Serialize)]
+#[derive(Queryable, Serialize)]
 struct User {
     id: i32,
     name: String,
     email: String,
 }
 
-#[derive(Queryable)]
-#[derive(Serialize)]
+#[derive(Queryable, Serialize)]
 struct ITest {
     id: i32,
     name: String,
@@ -125,15 +123,17 @@ macro_rules! show_sql {
         // debug!("{:?}", sql_query);
         match env::var("SHOW_SQL") {
             Ok(s) => {
-                if s == "true"{
-                  debug!("\x1b[31m{:?}\x1b[0m", diesel::debug_query::<diesel::pg::Pg, _>($query));
+                if s == "true" {
+                    debug!(
+                        "\x1b[31m{:?}\x1b[0m",
+                        diesel::debug_query::<diesel::pg::Pg, _>($query)
+                    );
                 }
             }
             Err(_) => {}
         };
     };
 }
-
 
 // 查询操作示例
 async fn index() -> impl Responder {
@@ -164,10 +164,7 @@ async fn test(path: web::Path<String>) -> impl Responder {
     use self::t_test::dsl::*;
 
     let conn = &mut postgresql_connection();
-    let results = t_test
-        .limit(5)
-        .load::<ITest>(conn)
-        .unwrap();
+    let results = t_test.limit(5).load::<ITest>(conn).unwrap();
 
     let mut array = serde_json::json!([]);
     for test in results {
@@ -186,7 +183,7 @@ async fn test(path: web::Path<String>) -> impl Responder {
 #[get("/hello/{name}")]
 async fn hello(path: web::Path<String>) -> impl Responder {
     let data = serde_json::json!({
-        "name": format!("Hello World {}!", &path),
+        "name": format!("Hello World {:?}!", &path),
         "age": 30
     });
     let res = RestHttpResponse {
@@ -212,5 +209,8 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(index))
             .route("/test/{name}", web::get().to(test))
             .service(hello)
-    }).bind("127.0.0.1:8080")?.run().await
+    })
+        .bind("127.0.0.1:8080")?
+        .run()
+        .await
 }

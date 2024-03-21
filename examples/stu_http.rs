@@ -24,8 +24,8 @@
 
 // rust http 学习
 // https://docs.rs/reqwest/latest/reqwest/blocking/struct.Response.html
-use std::path::Path;
 use reqwest::{Certificate, Identity};
+use std::path::Path;
 
 // 定义结构体
 struct HttpSync {
@@ -47,7 +47,9 @@ impl HttpSync {
     ///
     /// 解决方法是不要直接使用self,使用&self引用来获取HttpSync实例:
     fn get(&self) {
-        let body = &self.client.get(&self.url)
+        let body = &self
+            .client
+            .get(&self.url)
             .header("token", "123456")
             .query(&[("username", "tom")])
             .send()
@@ -61,10 +63,13 @@ impl HttpSync {
     /// 解决方法是不要直接使用self,使用&self引用来获取HttpSync实例:
     fn post(&self) {
         let body = "{ \"title\": \"Hello\" }";
-        let text = &self.client.post(&self.url)
+        let text = &self
+            .client
+            .post(&self.url)
             .header("Content-Type", "application/json")
             .body(body)
-            .send().expect("错误详情")
+            .send()
+            .expect("错误详情")
             .text()
             .unwrap();
         println!("POST Response body: {}\n", text);
@@ -88,11 +93,11 @@ impl HttpSync {
 
     /// 测试 https 证书
     fn tls(&self) {
-        let default_os_path = std::path::PathBuf::from(dirs::home_dir().unwrap())
-            .join("Workspaces/pki");
+        let default_os_path =
+            std::path::PathBuf::from(dirs::home_dir().unwrap()).join("Workspaces/pki");
         let cert_path = match std::env::consts::OS {
             "windows" => Path::new("E:\\etc\\pki"),
-            _ => default_os_path.as_path()
+            _ => default_os_path.as_path(),
         };
 
         // x509 客户端证书
@@ -100,7 +105,8 @@ impl HttpSync {
         let client_cert = std::fs::read_to_string(client_cert_file.to_str().unwrap()).unwrap();
         // x509 客户端证书私钥
         let client_cert_key_file = cert_path.join("client-key.pem");
-        let client_cert_key = std::fs::read_to_string(client_cert_key_file.to_str().unwrap()).unwrap();
+        let client_cert_key =
+            std::fs::read_to_string(client_cert_key_file.to_str().unwrap()).unwrap();
 
         // 这个是 x509 客户端证书和私钥 内容合并之后的内容
         let client_bundle_cert = format!("{}{}", client_cert, client_cert_key);
@@ -127,8 +133,8 @@ impl HttpSync {
 
         // 构建Client
         let client = reqwest::blocking::Client::builder()
-            .use_rustls_tls()// 启用tls配置
-            .identity(identity)// 加载客户端证书和私钥
+            .use_rustls_tls() // 启用tls配置
+            .identity(identity) // 加载客户端证书和私钥
             .add_root_certificate(ca_certificate) // 加载CA证书
             .build()
             .unwrap();
@@ -138,7 +144,8 @@ impl HttpSync {
             .get("https://10.18.0.1:6443")
             .send()
             .expect("Send message ERROR")
-            .text().unwrap();
+            .text()
+            .unwrap();
 
         println!("{}", response)
     }
@@ -159,4 +166,3 @@ fn main() {
 
     http_sync.tls();
 }
-

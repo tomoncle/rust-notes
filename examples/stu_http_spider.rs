@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-
 /// ********************************************
 /// * soup 已经不在更新了，代码不再使用；转为 scraper *
 /// ********************************************
@@ -94,7 +93,8 @@ fn html_response() -> String {
     let url = "https://www.downloadkubernetes.com";
     let user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
     AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-    let body = reqwest::blocking::Client::new().get(url)
+    let body = reqwest::blocking::Client::new()
+        .get(url)
         .header("User-Agent", user_agent)
         .send()
         .expect("调用失败")
@@ -102,7 +102,6 @@ fn html_response() -> String {
         .unwrap();
     body
 }
-
 
 fn main() {
     use scraper::{Html, Selector};

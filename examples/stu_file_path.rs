@@ -45,9 +45,11 @@ fn main() {
     println!("用户家目录～：{}", home_dir2);
 }
 
-
 fn test_file_path() {
-    println!("当前执行目录：{}", std::env::current_dir().unwrap().display());
+    println!(
+        "当前执行目录：{}",
+        std::env::current_dir().unwrap().display()
+    );
     println!("当前执行目录：{}", Path::new("./").display());
     /*
       测试目录
@@ -60,9 +62,11 @@ fn test_file_path() {
     // unwrap_or_else 在 parent 为空时返回当前目录 "."
     let input_parent_dir = input_dir_path.parent().unwrap_or_else(|| Path::new("."));
     // 获取 input_dir 的父级目录：E:\下载, 目录名称：阿里云盘
-    println!("获取 input_dir 的父级目录：{}, 目录名称：{}",
-             input_parent_dir.display(),
-             input_dir_name.to_str().unwrap());
+    println!(
+        "获取 input_dir 的父级目录：{}, 目录名称：{}",
+        input_parent_dir.display(),
+        input_dir_name.to_str().unwrap()
+    );
 
     // 测试目录拼接
     let output_dir = "D:\\test";
@@ -70,15 +74,29 @@ fn test_file_path() {
     let output_dir_new_path = output_dir_path.join(input_dir_name.to_str().unwrap().to_string());
 
     // 获取 output_dir 绝对路径：D:\test\阿里云盘
-    println!("获取 output_dir 绝对路径：{}", output_dir_new_path.display());
+    println!(
+        "获取 output_dir 绝对路径：{}",
+        output_dir_new_path.display()
+    );
 
     // 测试目录的根路径
-    println!("目录的根路径：{}", input_dir_path.ancestors().last().unwrap_or(input_dir_path).to_path_buf().display());
+    println!(
+        "目录的根路径：{}",
+        input_dir_path
+            .ancestors()
+            .last()
+            .unwrap_or(input_dir_path)
+            .to_path_buf()
+            .display()
+    );
 
     // 判断文件夹是否为空
-    println!("判断文件夹是否为空：{}", fs::read_dir("E:\\backup")
-        .map_or(0, |entries| entries
-            .filter_map(|entry| entry.ok()).count()) == 0)
+    println!(
+        "判断文件夹是否为空：{}",
+        fs::read_dir("E:\\backup")
+            .map_or(0, |entries| entries.filter_map(|entry| entry.ok()).count())
+            == 0
+    )
 }
 
 fn test_loop_dir() {
@@ -86,7 +104,10 @@ fn test_loop_dir() {
     let output_dir = "D:\\test";
 
     // 使用 WalkDir 遍历文件夹
-    for entry in walkdir::WalkDir::new(input_dir).into_iter().filter_map(|e| e.ok()) {
+    for entry in walkdir::WalkDir::new(input_dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         if entry.path().is_file() {
             println!("源文件路径：{}", entry.path().display().to_string());
             let parent_dir = Path::new(entry.path()).parent().unwrap();
@@ -96,7 +117,8 @@ fn test_loop_dir() {
 
             // let target_file = entry.path().display().to_string().to_lowercase()
             //     .replace(input_dir, output_dir);
-            let target_file = make_target_filename(&entry.path().display().to_string(), input_dir, output_dir);
+            let target_file =
+                make_target_filename(&entry.path().display().to_string(), input_dir, output_dir);
             println!("目标文件路径：{}", target_file);
             let parent_dir = Path::new(&target_file).parent().unwrap();
             println!("目标文件夹路径：{}", parent_dir.display());
@@ -104,7 +126,11 @@ fn test_loop_dir() {
             println!("目标文件根路径：{}", root_dir.display());
 
             let is_video = file_is_video(&entry.path().display().to_string());
-            println!("{} , 是否为视频文件: {:?}", entry.path().display(), is_video);
+            println!(
+                "{} , 是否为视频文件: {:?}",
+                entry.path().display(),
+                is_video
+            );
             // 换行
             println!()
         }
@@ -133,8 +159,9 @@ fn check_file_type(file_path: &str, extensions: &[&str]) -> bool {
 
 fn file_is_video(file_path: &str) -> bool {
     let video_extensions = [
-        "mp4", "mkv", "avi", "mwv", "rm", "rmvb", "flv",
-        "mov", "vob", "mpg", "qt", "mpeg", "ogg", "3gp"];
+        "mp4", "mkv", "avi", "mwv", "rm", "rmvb", "flv", "mov", "vob", "mpg", "qt", "mpeg", "ogg",
+        "3gp",
+    ];
     check_file_type(file_path, &video_extensions)
 }
 
@@ -152,7 +179,11 @@ fn make_target_filename(file_name: &str, input_dir: &str, output_dir: &str) -> S
     // };
     let input_parent = Path::new(input_dir).parent();
     return if let Some(parent_path) = input_parent {
-        format!("{}/{}", output_dir.trim_end_matches("/"), file_name.trim_start_matches("/"))
+        format!(
+            "{}/{}",
+            output_dir.trim_end_matches("/"),
+            file_name.trim_start_matches("/")
+        )
     } else {
         file_name.replace(&input_parent.unwrap().display().to_string(), output_dir)
     };
@@ -166,11 +197,14 @@ fn file_copy(source_file: &Path, target_file: &Path) {
             fs::create_dir_all(parent_path).expect(&msg);
         }
     }
-    msg = format!("拷贝文件 {} -> {} 失败!", source_file.display(), target_file.display());
+    msg = format!(
+        "拷贝文件 {} -> {} 失败!",
+        source_file.display(),
+        target_file.display()
+    );
     fs::copy(source_file, target_file).expect(&msg);
 }
 
 fn dir_is_empty(dir_path: &str) -> bool {
-    fs::read_dir(dir_path).map_or(0, |entries|
-        entries.filter_map(|entry| entry.ok()).count()) == 0
+    fs::read_dir(dir_path).map_or(0, |entries| entries.filter_map(|entry| entry.ok()).count()) == 0
 }

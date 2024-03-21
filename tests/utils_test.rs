@@ -30,16 +30,17 @@
 //    pub mod utils;
 //    pub mod enums;
 
-
 // rust_notes 为当前项目名(rust-notes 自动转为 rust_notes)
 use rust_notes::utils::country::{china, usa};
 use rust_notes::utils::fake_structs::Person;
 use rust_notes::utils::json::JsonConverter;
 
-
 #[test]
 fn convert_json() {
-    let person = Person { name: "Alice".to_string(), age: 30 };
+    let person = Person {
+        name: "Alice".to_string(),
+        age: 30,
+    };
     let json_str = JsonConverter::convert_json(&person);
     assert_eq!(false, json_str.is_empty());
 }
@@ -59,8 +60,14 @@ fn convert_object() {
 #[test]
 fn convert_json_array() {
     let persons = vec![
-        Person { name: "Bob".to_string(), age: 25 },
-        Person { name: "Charlie".to_string(), age: 35 },
+        Person {
+            name: "Bob".to_string(),
+            age: 25,
+        },
+        Person {
+            name: "Charlie".to_string(),
+            age: 35,
+        },
     ];
     let json_array_str = JsonConverter::convert_json_array(&persons);
     assert_eq!(false, json_array_str.is_empty());
