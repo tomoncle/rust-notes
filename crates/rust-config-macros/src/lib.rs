@@ -21,35 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-/// ############################## 声明宏 ##############################
-/// 声明式宏（Declarative Macros）：声明式宏也称为 macro_rules! 宏，是 Rust 中最常见的宏类型之一。
-/// 通过 macro_rules! 宏，你可以定义模式匹配规则，用于将输入的代码模式转换成输出的代码模式。
+/// ############################# 过程宏 ##############################
+/// 过程式宏（Procedural Macros）：过程式宏是一种更为强大和灵活的宏类型，
+/// 允许你编写 Rust 代码来生成和操作抽象语法树（AST）。过程式宏包括属性宏、函数宏、自定义派生宏等几种类型。
+///
+/// 属性宏：属性宏函数是在编译时被调用的，而不是在运行时
+///
+use proc_macro::TokenStream;
 
-// 声明宏：该宏的作用是通过调用println!宏打印出一个问候语。
-macro_rules! greet {
-    ($name:expr) => {
-        // 打印问候语
-        println!("Hello, {}!", $name)
-    };
+#[proc_macro_attribute]
+pub fn sample_attribute(attr: TokenStream, item: TokenStream) -> TokenStream {
+    println!("attr: \"{}\"", attr.to_string());
+    println!("item: \"{}\"", item.to_string());
+    item
 }
 
-// 声明宏：
-// 它接受任意数量的参数，并通过println!宏将这些参数以调试格式输出。
-// 具体实现中，($($arg:tt)*)表示接受任意类型的token树作为参数，
-// 并在println!中使用{:#?}格式化输出
-macro_rules! print_args {
-    ($($arg:tt)*) => {
-        // 打印输入参数
-        println!("args: {:#?}", ($($arg)*))
-    };
-}
-
-fn say_hello(a: &str, b: &str) {
-    let value = a.to_string() + " " + b;
-    greet!(value);
-    print_args!(a, b);
-}
-
-fn main() {
-    say_hello("java", "python")
-}

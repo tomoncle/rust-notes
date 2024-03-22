@@ -1,0 +1,17 @@
+[package]
+name = "rust-config-macros"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+### 自定义宏依赖
+# extra-traits ，如此在代码开发过程中，我们能够打印查看类如 syn::TokenStream / syn::Visibility 等类型的变量
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+quote = "1.0"
+
+
+[lib]
+# 配置该模块为 proc-macro 类型的 crate
+proc-macro = true

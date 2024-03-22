@@ -11,6 +11,7 @@ local_runtime = []
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rust-config-macros = { path = "./crates/rust-config-macros" }
 ### hello world
 ferris-says = "0.3.1"
 ### http 支持，
@@ -57,3 +58,7 @@ native-tls = "0.2.11"
 ### log
 log = "0.4.20"
 env_logger = "0.11.1"
+### 自定义宏
+proc-macro2 = "1.0.78"
+quote = "1.0.35"
+syn = "1.0.109"
