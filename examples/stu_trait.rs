@@ -22,45 +22,79 @@
  * SOFTWARE.
  */
 
-// 使用 trait objects 的 Box<dyn SimpleConnection> 来存储不同类型的连接，并在运行时根据条件选择具体的连接类型。
+use diesel::{Connection, MysqlConnection, PgConnection, SqliteConnection};
+
+// 使用 trait objects 的 Box<dyn Database> 来存储不同类型的连接，并在运行时根据条件选择具体的连接类型。
 //
 // 通过这种方式，您可以在 Rust 中实现类似动态加载不同类型连接的功能。
-trait SimpleConnection {
-    fn establish_connection(&self, url: &str);
+trait Database {
+    fn connection(&self, url: &str);
 }
 
-struct MysqlConnection;
+struct Mysql;
 
-struct PgConnection;
+struct Postgres;
 
-struct SqliteConnection;
+struct Sqlite;
 
-impl SimpleConnection for MysqlConnection {
-    fn establish_connection(&self, url: &str) {
+impl Database for Mysql {
+    fn connection(&self, url: &str) {
         println!("Establishing MySQL connection to {}", url);
     }
 }
 
-impl SimpleConnection for PgConnection {
-    fn establish_connection(&self, url: &str) {
+impl Database for Postgres {
+    fn connection(&self, url: &str) {
         println!("Establishing PostgreSQL connection to {}", url);
     }
 }
 
-impl SimpleConnection for SqliteConnection {
-    fn establish_connection(&self, url: &str) {
+impl Database for Sqlite {
+    fn connection(&self, url: &str) {
         println!("Establishing SQLite connection to {}", url);
     }
 }
 
-fn main() {
-    let connection: Box<dyn SimpleConnection> = if true {
-        Box::new(MysqlConnection)
-    } else if false {
-        Box::new(PgConnection)
-    } else {
-        Box::new(SqliteConnection)
-    };
 
-    connection.establish_connection("some_url_here");
+
+
+struct DBDriver<T> {
+    connection: T,
+}
+
+impl DBDriver<PgConnection> {
+    fn new(url: &str) -> Self {
+        DBDriver {
+            connection: PgConnection::establish(url.clone()).expect("connect error："),
+        }
+    }
+}
+
+impl DBDriver<SqliteConnection> {
+    fn new(url: &str) -> Self {
+        DBDriver {
+            connection: SqliteConnection::establish(url.clone()).expect("connect error："),
+        }
+    }
+}
+
+impl DBDriver<MysqlConnection> {
+    fn new(url: &str) -> Self {
+        DBDriver {
+            connection: MysqlConnection::establish(url.clone()).expect("connect error："),
+        }
+    }
+}
+
+
+fn main() {
+    let value = "mysql";
+    let db: Box<dyn Database> = if value.to_lowercase().starts_with("mysql") {
+        Box::new(Mysql)
+    } else if value.to_lowercase().starts_with("postgres") {
+        Box::new(Postgres)
+    } else {
+        Box::new(Sqlite)
+    };
+    db.connection("localhost");
 }
