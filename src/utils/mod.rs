@@ -86,12 +86,10 @@
 // use utils::fake_structs::Person;
 //```
 
-
 // 表示：当前 utils 模块包含了在 src/utils/json.rs 中的代码
 pub mod json;
 // 表示：当前 utils 模块包含了在 src/utils/fake_structs.rs 中的代码
 pub mod fake_structs;
-
 
 // 定义自己的 模块树
 #[allow(dead_code)] // 使用 #[allow(dead_code)] 属性来禁止编译器对未使用的代码发出警告

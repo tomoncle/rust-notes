@@ -21,53 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+/// ############################## 声明宏 ##############################
+/// 声明式宏（Declarative Macros）：声明式宏也称为 macro_rules! 宏，是 Rust 中最常见的宏类型之一。
+/// 通过 macro_rules! 宏，你可以定义模式匹配规则，用于将输入的代码模式转换成输出的代码模式。
+
+// 声明宏：该宏的作用是通过调用println!宏打印出一个问候语。
+macro_rules! greet {
+    ($name:expr) => {
+        // 打印问候语
+        println!("Hello, {}!", $name)
+    };
+}
+
+// 声明宏：
+// 它接受任意数量的参数，并通过println!宏将这些参数以调试格式输出。
+// 具体实现中，($($arg:tt)*)表示接受任意类型的token树作为参数，
+// 并在println!中使用{:#?}格式化输出
+macro_rules! print_args {
+    ($($arg:tt)*) => {
+        // 打印输入参数
+        println!("args: {:#?}", ($($arg)*))
+    };
+}
+
+fn say_hello(a: &str, b: &str) {
+    let value = a.to_string() + " " + b;
+    greet!(value);
+    print_args!(a, b);
+}
 
 fn main() {
-    // 用serde_json::json!生成JSON
-    //
-    // serde_json::json!宏是用于生成JSON字面量的宏
-    //      json 是该宏的名称
-    //      ! 表明它是一个宏(macro)
-    //      (...) 里面是参数传入该宏
-    // 该宏会将传入的数据结构编译成一个 JSON 字面量。
-    // 举例来说,serde_json::json!({...}) 会编译生成一个等价于 '{"name":"John","age":30}' 字符串字面量。
-    // 所以 ! 符号标识它是一个 macro,而不是普通函数,并且需要用括号传入参数
-    //
-
-    let data = serde_json::json!({
-        "name": format!("Hello World {}!", "macro"),
-        "age": 30
-    });
-    println!("{}", data)
-
-    // 这个代码定义了一个名为json的macro,用于生成JSON字面量。
-    //
-    // 详细解释:
-    //      macro_rules! 定义一个名为macro_rules的宏
-    //      json 内部定义了一个名为json的宏
-    //      $($json:tt)+ 语法定义了json宏的参数模式
-    //      这里$json:tt表示匹配0个或多个任何token
-    //      json!(...) => { ... } 块定义了宏的替换体(expansion)
-    //      在替换体中调用了名为json_internal!的内部宏
-    //      ($($json)+) 将匹配的$json参数直接传给内部宏
-    //
-    // 所以总体来说:
-    //      定义了一个名为json的macro
-    //      它以($($json:tt)+) 的模式匹配参数
-    //      匹配后调用内部json_internal!宏,直接传递参数
-    //
-    // 目的就是定义一个外露的json!宏接口:
-    //      对用户隐藏内部实现细节
-    //      简单地将参数转发给内部json_internal!实现生成JSON
-    //      所以它实现了一个外部友好但内部复杂的JSON生成macro接口。
-    /*
-
-    #[macro_export(local_inner_macros)]
-    macro_rules! json {
-        // Hide distracting implementation details from the generated rustdoc.
-        ($($json:tt)+) => {
-            json_internal!($($json)+)
-        };
-    }
-    */
+    say_hello("java", "python")
 }

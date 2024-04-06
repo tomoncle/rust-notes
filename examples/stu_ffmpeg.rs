@@ -27,7 +27,7 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::path::Path;
-use std::process::{Command, exit};
+use std::process::{exit, Command};
 
 use chrono::{DateTime, Local};
 use clap::Parser;
@@ -42,7 +42,6 @@ const LOG_FILE: &str = ".transform-rs.log";
 #[command(about = "本工具用于转换指定目录中的视频及图片文件，依赖于 https://ffmpeg.org/.", long_about = None)]
 struct Args {
     // 对参数的描述信息，使用 `///` 来表示
-
     /// 需要转换的系统目录（绝对路径）
     #[arg(short, long)]
     input: Option<String>,
@@ -89,7 +88,6 @@ fn trans_video(input_file: &str, output_file: &str) -> Result<i32, Box<dyn Error
     }
     Ok(code)
 }
-
 
 fn trans_image(input_file: &str, output_file: &str) -> Result<i32, Box<dyn Error>> {
     let status = Command::new("ffmpeg")
@@ -146,8 +144,9 @@ fn duration_format(sec: f64) -> String {
 
 fn is_video_file(file_path: &str) -> bool {
     let video_extensions = [
-        "mp4", "mkv", "avi", "mwv", "rm", "rmvb", "flv",
-        "mov", "vob", "mpg", "qt", "mpeg", "ogg", "3gp"];
+        "mp4", "mkv", "avi", "mwv", "rm", "rmvb", "flv", "mov", "vob", "mpg", "qt", "mpeg", "ogg",
+        "3gp",
+    ];
     if let Some(ext) = Path::new(file_path).extension() {
         if let Some(ext_str) = ext.to_str() {
             return video_extensions.contains(&ext_str.to_lowercase().as_str());
@@ -168,7 +167,11 @@ fn is_image_file(file_path: &str) -> bool {
 fn file_rename(file_name: &str, input_dir: &str, output_dir: &str) -> String {
     let input_parent = Path::new(input_dir).parent();
     return if input_parent.is_none() {
-        format!("{}/{}", output_dir.trim_end_matches("/"), file_name.trim_start_matches("/"))
+        format!(
+            "{}/{}",
+            output_dir.trim_end_matches("/"),
+            file_name.trim_start_matches("/")
+        )
     } else {
         file_name.replace(&input_parent.unwrap().display().to_string(), output_dir)
     };
@@ -181,13 +184,16 @@ fn copy_file(source_file: &Path, target_file: &Path) {
         msg = format!("创建文件夹 {} 失败!", parent_path.unwrap().display());
         fs::create_dir_all(parent_path.unwrap()).expect(&msg);
     }
-    msg = format!("拷贝文件 {} -> {} 失败!", source_file.display(), target_file.display());
+    msg = format!(
+        "拷贝文件 {} -> {} 失败!",
+        source_file.display(),
+        target_file.display()
+    );
     fs::copy(source_file, target_file).expect(&msg);
 }
 
 fn dir_empty(dir_path: &str) -> bool {
-    fs::read_dir(dir_path).map_or(0, |entries|
-        entries.filter_map(|entry| entry.ok()).count()) == 0
+    fs::read_dir(dir_path).map_or(0, |entries| entries.filter_map(|entry| entry.ok()).count()) == 0
 }
 
 fn trans_dir(input_dir: &str, output_dir: &str) -> Result<(), Box<dyn Error>> {
@@ -200,14 +206,21 @@ fn trans_dir(input_dir: &str, output_dir: &str) -> Result<(), Box<dyn Error>> {
     let log_path = home_dir.join(LOG_FILE).display().to_string();
     let filename = log_path.as_str();
     // 打开文件，如果文件不存在则创建它
-    let mut file = OpenOptions::new().read(true).write(true).create(true).open(filename)
+    let mut file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(filename)
         .expect(format!("打开日志文件失败: {}!", filename).as_str());
     // 获取更新前的文件内容
     let mut log_content = String::new();
     file.read_to_string(&mut log_content).expect("");
 
     // 使用 WalkDir 遍历文件夹
-    for entry in walkdir::WalkDir::new(input_dir).into_iter().filter_map(|e| e.ok()) {
+    for entry in walkdir::WalkDir::new(input_dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
         if entry.path().is_file() {
             let source_file = entry.path().display().to_string();
             let target_file = file_rename(&source_file, input_dir, output_dir);
@@ -232,7 +245,11 @@ fn trans_dir(input_dir: &str, output_dir: &str) -> Result<(), Box<dyn Error>> {
                 // 获取当前时间
                 let current_time: DateTime<Local> = Local::now();
                 // 向文件写入内容
-                let value = format!("{}: {} ok!\n", current_time.format("%Y-%m-%d %H:%M:%S"), target_file);
+                let value = format!(
+                    "{}: {} ok!\n",
+                    current_time.format("%Y-%m-%d %H:%M:%S"),
+                    target_file
+                );
                 file.write_all(value.as_bytes()).expect("更新日志文件失败!");
             }
         }
@@ -263,12 +280,13 @@ fn main() -> Result<(), Box<dyn Error>> {
             "windows" => println!("Current OS is Windows"),
             _ => println!("Unknown OS"),
         }
-        println!("当前执行目录：{}", std::env::current_dir().unwrap().display());
+        println!(
+            "当前执行目录：{}",
+            std::env::current_dir().unwrap().display()
+        );
         trans_dir(&input, &output)?;
     } else {
         println!("Error：请输入输入目录和输出目录!");
     };
     Ok(())
 }
-
-

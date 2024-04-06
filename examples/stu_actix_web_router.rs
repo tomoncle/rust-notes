@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-use actix_web::{App, get, HttpRequest, HttpServer, Responder, web};
+use actix_web::{get, web, App, HttpRequest, HttpServer, Responder};
 use serde::Serialize;
 
 // 使用Serde的#[derive(Serialize)]自动生成序列化实现
@@ -76,8 +76,8 @@ async fn default(_req: HttpRequest) -> impl Responder {
 
 // 定义路由模块
 mod routes {
-    use actix_web::{web};
     use crate::{default, hello, index, users};
+    use actix_web::web;
 
     pub fn config(cfg: &mut web::ServiceConfig) {
         cfg.service(
@@ -85,7 +85,7 @@ mod routes {
                 .route("/{name}", web::get().to(default))
                 .route("/users/{id}", web::get().to(users))
                 .service(index)
-                .service(hello)
+                .service(hello),
         );
     }
 }
@@ -93,8 +93,8 @@ mod routes {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("App starting on: {:?}", "127.0.0.1:8080");
-    HttpServer::new(|| {
-        App::new().configure(routes::config)
-    }).bind("127.0.0.1:8080")?.run().await
+    HttpServer::new(|| App::new().configure(routes::config))
+        .bind("127.0.0.1:8080")?
+        .run()
+        .await
 }
-

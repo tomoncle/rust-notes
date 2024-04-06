@@ -67,6 +67,15 @@ fn object_to_json() {
     // 用serde_json::to_string序列化
     println!("测试res1：{}", serde_json::to_string(&res1).unwrap());
 
+    // 用serde_json::json!生成JSON
+    //
+    // serde_json::json!宏是用于生成JSON字面量的宏
+    //      json 是该宏的名称
+    //      ! 表明它是一个宏(macro)
+    //      (...) 里面是参数传入该宏
+    // 该宏会将传入的数据结构编译成一个 JSON 字面量。
+    // 举例来说,serde_json::json!({...}) 会编译生成一个等价于 '{"name":"John","age":30}' 字符串字面量。
+    // 所以 ! 符号标识它是一个 macro,而不是普通函数,并且需要用括号传入参数
     let res2 = HttpResponse {
         code: 200,
         message: "OK".to_string(),
@@ -115,7 +124,6 @@ fn json_to_struct() {
     println!("User: {:?}", user);
 }
 
-
 /// json 组装
 fn json_assemble() {
     // 创建一个空的 JSON 对象
@@ -134,12 +142,17 @@ fn json_assemble() {
     let pretty_json = serde_json::to_string_pretty(&json_obj).unwrap();
     println!("Json格式化: {}", pretty_json);
 
-
     // 创建一个空的 Json 数组
     let mut json_array = serde_json::json!([]);
     // 添加 JSON 对象到数组
-    json_array.as_array_mut().unwrap().push(serde_json::json!({"name":"github"}));
-    json_array.as_array_mut().unwrap().push(serde_json::json!({"name":"google"}));
+    json_array
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({"name":"github"}));
+    json_array
+        .as_array_mut()
+        .unwrap()
+        .push(serde_json::json!({"name":"google"}));
     // 打印 json 数组
     // [{"name":"github"},{"name":"google"}]
     println!("json数组: {}", json_array);

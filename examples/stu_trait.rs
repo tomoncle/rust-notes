@@ -56,6 +56,7 @@ impl Database for Sqlite {
 }
 
 
+<<<<<<< HEAD
 
 
 struct DBDriver<T> {
@@ -98,3 +99,7 @@ fn main() {
     };
     db.connection("localhost");
 }
+=======
+    connection.establish_connection("some_url_here");
+}
+>>>>>>> 8c25717ae16d894546bfd2c4a0fd664648e7bb68

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-use actix_web::{App, get, HttpRequest, HttpServer, Responder, web};
+use actix_web::{get, web, App, HttpRequest, HttpServer, Responder};
 use serde::Serialize;
 
 // 使用Serde的#[derive(Serialize)]自动生成序列化实现
@@ -68,5 +68,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .service(index)
             .route("/{name}", web::get().to(hello))
-    }).bind(("127.0.0.1", 8080))?.run().await
+    })
+        .bind(("127.0.0.1", 8080))?
+        .run()
+        .await
 }

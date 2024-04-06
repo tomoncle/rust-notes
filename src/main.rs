@@ -26,14 +26,17 @@
 // use utils::fake_structs::Person;
 //
 // mod utils { pub mod json; pub mod fake_structs;}
-use utils::json::JsonConverter;
+use utils::country::{china, usa};
 use utils::fake_structs::Person;
-use utils::country::{usa, china};
+use utils::json::JsonConverter;
 
 mod utils;
 
 fn main() {
-    let person = Person { name: "Alice".to_string(), age: 30 };
+    let person = Person {
+        name: "Alice".to_string(),
+        age: 30,
+    };
     let json_str = JsonConverter::convert_json(&person);
     println!("JSON String: {}", json_str);
 
@@ -41,8 +44,14 @@ fn main() {
     println!("Json Object: {:?}", json_obj);
 
     let persons = vec![
-        Person { name: "Bob".to_string(), age: 25 },
-        Person { name: "Charlie".to_string(), age: 35 },
+        Person {
+            name: "Bob".to_string(),
+            age: 25,
+        },
+        Person {
+            name: "Charlie".to_string(),
+            age: 35,
+        },
     ];
     let json_array_str = JsonConverter::convert_json_array(&persons);
     println!("JSON Array String: {}", json_array_str);

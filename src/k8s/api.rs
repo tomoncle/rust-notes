@@ -33,14 +33,18 @@ pub struct HttpClient {
 
 impl HttpClient {
     pub fn new(http_config: HttpKubeConfig) -> Self {
-        let client_bundle_cert = format!("{}{}", http_config.client_certificate_data, http_config.client_key_data);
-        let ca_certificate = Certificate::from_pem(http_config.certificate_authority_data.as_bytes()).unwrap();
+        let client_bundle_cert = format!(
+            "{}{}",
+            http_config.client_certificate_data, http_config.client_key_data
+        );
+        let ca_certificate =
+            Certificate::from_pem(http_config.certificate_authority_data.as_bytes()).unwrap();
         let identity = Identity::from_pem(&client_bundle_cert.as_bytes()).unwrap();
         HttpClient {
             server: http_config.server,
             client: reqwest::blocking::Client::builder()
-                .use_rustls_tls()// 启用tls配置
-                .identity(identity)// 加载客户端证书和私钥
+                .use_rustls_tls() // 启用tls配置
+                .identity(identity) // 加载客户端证书和私钥
                 .add_root_certificate(ca_certificate) // 加载CA证书
                 .build()
                 .unwrap(),
@@ -51,14 +55,13 @@ impl HttpClient {
         self.client
             .get(&self.server)
             .send()
-            .expect("健康检查失败!").status().is_success()
+            .expect("健康检查失败!")
+            .status()
+            .is_success()
     }
 
     pub fn apis(&self) -> String {
-        let response = self.client
-            .get(&self.server)
-            .send()
-            .expect("查询失败!");
+        let response = self.client.get(&self.server).send().expect("查询失败!");
         let json: serde_json::Value = response.json().unwrap();
         json.to_string()
     }
@@ -79,7 +82,6 @@ impl HttpClient {
     }
 }
 
-
 pub fn join_path(paths: &[&str]) -> String {
     let mut result = String::new();
     for (index, part) in paths.iter().enumerate() {
@@ -92,7 +94,6 @@ pub fn join_path(paths: &[&str]) -> String {
     }
     result
 }
-
 
 pub fn join_args(args: &[&str]) -> String {
     args.iter().map(|&arg| arg).collect::<Vec<&str>>().join("&")
@@ -143,6 +144,15 @@ users:
         let config = HttpKubeConfig::from_yaml(KUBE_CONFIG);
         let http_client = HttpClient::new(config);
         let url = join_path(&[&http_client.server, "/version"]);
-        assert_eq!(http_client.client.get(url).send().unwrap().status().is_success(), true);
+        assert_eq!(
+            http_client
+                .client
+                .get(url)
+                .send()
+                .unwrap()
+                .status()
+                .is_success(),
+            true
+        );
     }
 }

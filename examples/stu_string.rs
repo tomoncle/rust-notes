@@ -76,7 +76,6 @@ fn main() {
     let string3 = str2.to_string();
     println!("{}", String::from(string1) + &string2 + &string3);
 
-
     // let apples = 5;      // 不可变,  let apples = apples + 10;
     // let mut bananas = 5; // 可变, bananas = 20;
     // println!("{}, {}", apples, bananas)
@@ -96,7 +95,6 @@ fn main() {
         _ => "Other",
     };
     println!("The text is: {}", text);
-
 
     // 绿色文本
     println!("\x1b[32mGreen text\x1b[0m");

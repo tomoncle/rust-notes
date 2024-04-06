@@ -28,7 +28,7 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{Read, Write};
 use std::path::Path;
-use std::process::{Command, exit};
+use std::process::{exit, Command};
 
 use chrono::Local;
 use clap::Parser;
@@ -44,7 +44,6 @@ const LOG_FILE: &str = ".transform-rs.log";
 #[command(about = "本工具用于转换指定目录中的视频及图片文件，依赖于 https://ffmpeg.org/.", long_about = None)]
 struct Args {
     // 对参数的描述信息，使用 `///` 来表示
-
     /// 需要转换的系统目录（绝对路径）
     #[arg(short, long)]
     input: Option<String>,
@@ -122,7 +121,10 @@ impl Transformer {
         let filename = log_path.as_str();
         // 打开文件，如果文件不存在则创建它
         let mut file = OpenOptions::new()
-            .read(true).write(true).create(true).open(filename)
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(filename)
             .expect(format!("打开日志文件失败: {}!", filename).as_str());
         // 获取更新前的文件内容
         let mut log_content = String::new();
@@ -131,7 +133,8 @@ impl Transformer {
         // 使用 WalkDir 遍历文件夹
         for entry in walkdir::WalkDir::new(&self.input_dir)
             .into_iter()
-            .filter_map(|e| e.ok()) {
+            .filter_map(|e| e.ok())
+        {
             if entry.path().is_file() {
                 let source_file = entry.path().display().to_string();
                 let target_file = self.make_target_file(&source_file);
@@ -161,7 +164,6 @@ impl Transformer {
         Ok(())
     }
 
-
     fn trans_video(&self, input_file: &str, output_file: &str) -> Result<i32, Box<dyn Error>> {
         // let duration = get_video_duration(input_file)?;
         // 文件损坏，不能解析；这里使用 match 表达式来处理
@@ -177,7 +179,8 @@ impl Transformer {
             return Ok(-1);
         }
 
-        let status = self.ffmpeg()
+        let status = self
+            .ffmpeg()
             .arg("-i")
             .arg(input_file)
             .arg("-ss")
@@ -200,9 +203,9 @@ impl Transformer {
         Ok(code)
     }
 
-
     fn trans_image(&self, input_file: &str, output_file: &str) -> Result<i32, Box<dyn Error>> {
-        let status = self.ffmpeg()
+        let status = self
+            .ffmpeg()
             .arg("-i")
             .arg(input_file)
             .arg("-q:v")
@@ -222,7 +225,8 @@ impl Transformer {
     }
 
     fn get_video_duration(&self, input_file: &str) -> Result<String, Box<dyn Error>> {
-        let output = self.ffprobe()
+        let output = self
+            .ffprobe()
             .arg(input_file)
             .arg("-show_entries")
             .arg("format=duration")
@@ -256,8 +260,9 @@ impl Transformer {
 
     fn is_video_file(&self, file_path: &str) -> bool {
         let video_extensions = [
-            "mp4", "mkv", "avi", "mwv", "rm", "rmvb", "flv",
-            "mov", "vob", "mpg", "qt", "mpeg", "ogg", "3gp"];
+            "mp4", "mkv", "avi", "mwv", "rm", "rmvb", "flv", "mov", "vob", "mpg", "qt", "mpeg",
+            "ogg", "3gp",
+        ];
         Path::new(file_path)
             .extension()
             .and_then(OsStr::to_str)
@@ -277,26 +282,36 @@ impl Transformer {
     fn make_target_file(&self, file_name: &str) -> String {
         let input_parent = Path::new(&self.input_dir).parent();
         return if input_parent.is_none() {
-            format!("{}/{}", &self.output_dir.trim_end_matches("/"), file_name.trim_start_matches("/"))
+            format!(
+                "{}/{}",
+                &self.output_dir.trim_end_matches("/"),
+                file_name.trim_start_matches("/")
+            )
         } else {
-            file_name.replace(&input_parent.unwrap().display().to_string(), &self.output_dir)
+            file_name.replace(
+                &input_parent.unwrap().display().to_string(),
+                &self.output_dir,
+            )
         };
     }
 
     fn copy_file(&self, source_file: &Path, target_file: &Path) {
-        fs::copy(source_file, target_file)
-            .expect(&format!("拷贝文件 {} -> {} 失败!", source_file.display(), target_file.display()));
+        fs::copy(source_file, target_file).expect(&format!(
+            "拷贝文件 {} -> {} 失败!",
+            source_file.display(),
+            target_file.display()
+        ));
     }
 
     fn check_input_dir_is_empty(&self) -> bool {
         if !Path::new(&self.input_dir).exists() {
             return true;
         }
-        fs::read_dir(&self.input_dir).map_or(0, |entries|
-            entries.filter_map(|entry| entry.ok()).count()) == 0
+        fs::read_dir(&self.input_dir)
+            .map_or(0, |entries| entries.filter_map(|entry| entry.ok()).count())
+            == 0
     }
 }
-
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
@@ -330,8 +345,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         exit(0);
     }
 
-    log.info(&format!("当前执行目录：{}", std::env::current_dir().unwrap().display()));
+    log.info(&format!(
+        "当前执行目录：{}",
+        std::env::current_dir().unwrap().display()
+    ));
     Transformer::new(input, output).trans_dir()?;
     Ok(())
 }
-

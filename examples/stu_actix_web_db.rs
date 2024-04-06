@@ -24,13 +24,14 @@
 // https://github.com/actix/examples
 // https://github.com/robatipoor/rustfulapi
 
-use actix_web::{App, get, HttpServer, Responder, web};
-use diesel::connection::SimpleConnection;
+use std::env;
+
+use actix_web::{get, middleware, web, App, HttpServer, Responder};
+use diesel::debug_query;
 use diesel::prelude::*;
-// use diesel::mysql::MysqlConnection;
-// use diesel::sqlite::SqliteConnection;
 use dotenv::dotenv;
-use serde::{Deserialize, Serialize};
+use log::{debug, info};
+use serde::Serialize;
 
 #[derive(Serialize)]
 struct RestHttpResponse<T> {
@@ -58,16 +59,14 @@ table! {
 }
 
 // 定义用户模型
-#[derive(Queryable)]
-#[derive(Serialize)]
+#[derive(Queryable, Serialize)]
 struct User {
     id: i32,
     name: String,
     email: String,
 }
 
-#[derive(Queryable)]
-#[derive(Serialize)]
+#[derive(Queryable, Serialize)]
 struct ITest {
     id: i32,
     name: String,
@@ -117,56 +116,36 @@ fn postgresql_connection() -> PgConnection {
     PgConnection::establish(&database_url).expect(err_msg)
 }
 
-
-struct DBDriver<T> {
-    connection: T,
+// 定义宏来打印 SQL 查询语句
+macro_rules! show_sql {
+    ($query:expr) => {
+        // let sql_query = debug_query::<diesel::pg::Pg, _>(&query);
+        // debug!("{:?}", sql_query);
+        match env::var("SHOW_SQL") {
+            Ok(s) => {
+                if s == "true" {
+                    debug!(
+                        "\x1b[31m{:?}\x1b[0m",
+                        diesel::debug_query::<diesel::pg::Pg, _>($query)
+                    );
+                }
+            }
+            Err(_) => {}
+        };
+    };
 }
-
-impl DBDriver<PgConnection> {
-    fn new(url: &str) -> Self {
-        DBDriver {
-            connection: PgConnection::establish(url.clone()).expect("connect error："),
-        }
-    }
-}
-
-impl DBDriver<SqliteConnection> {
-    fn new(url: &str) -> Self {
-        DBDriver {
-            connection: SqliteConnection::establish(url.clone()).expect("connect error："),
-        }
-    }
-}
-
-impl DBDriver<MysqlConnection> {
-    fn new(url: &str) -> Self {
-        DBDriver {
-            connection: MysqlConnection::establish(url.clone()).expect("connect error："),
-        }
-    }
-}
-
 
 // 查询操作示例
 async fn index() -> impl Responder {
     use self::users::dsl::*;
-    let connection_url = "postgres://postgres:postgres@172.16.61.135:5432/db_rust";
-
-    let mut conn: Box<dyn SimpleConnection> = if connection_url.to_lowercase().starts_with("mysql:") {
-        Box::new(DBDriver::<MysqlConnection>::new(connection_url).connection)
-    } else if connection_url.to_lowercase().starts_with("postgres:") {
-        Box::new(DBDriver::<PgConnection>::new(connection_url).connection)
-    } else if connection_url.to_lowercase().starts_with("sqlite:") {
-        Box::new(DBDriver::<SqliteConnection>::new(connection_url).connection)
-    } else {
-        Box::new(DBDriver::<SqliteConnection>::new(connection_url).connection)
-    };
-
-    // let mut conn = DBDriver::<PgConnection>::new(connection_url).connection;
-    let results = users.limit(5)
-        .load::<User>(&mut conn)
-        .expect("Error loading users");
-
+    let conn = &mut postgresql_connection();
+    // let results = users
+    //     .limit(5)
+    //     .load::<User>(&mut conn)
+    //     .expect("Error loading users");
+    let query = users.limit(5);
+    show_sql!(&query);
+    let results = query.load::<User>(conn).unwrap();
     let mut array = serde_json::json!([]);
     for user in results {
         let obj = serde_json::json!(&user);
@@ -184,10 +163,8 @@ async fn index() -> impl Responder {
 async fn test(path: web::Path<String>) -> impl Responder {
     use self::t_test::dsl::*;
 
-    let mut connection = postgresql_connection();
-    let results = t_test.limit(5)
-        .load::<ITest>(&mut connection)
-        .expect("Error loading t_test");
+    let conn = &mut postgresql_connection();
+    let results = t_test.limit(5).load::<ITest>(conn).unwrap();
 
     let mut array = serde_json::json!([]);
     for test in results {
@@ -205,17 +182,8 @@ async fn test(path: web::Path<String>) -> impl Responder {
 
 #[get("/hello/{name}")]
 async fn hello(path: web::Path<String>) -> impl Responder {
-    // 用serde_json::json!生成JSON
-    //
-    // serde_json::json!宏是用于生成JSON字面量的宏
-    //      json 是该宏的名称
-    //      ! 表明它是一个宏(macro)
-    //      (...) 里面是参数传入该宏
-    // 该宏会将传入的数据结构编译成一个 JSON 字面量。
-    // 举例来说,serde_json::json!({...}) 会编译生成一个等价于 '{"name":"John","age":30}' 字符串字面量。
-    // 所以 ! 符号标识它是一个 macro,而不是普通函数,并且需要用括号传入参数
     let data = serde_json::json!({
-        "name": format!("Hello World {}!", &path),
+        "name": format!("Hello World {:?}!", &path),
         "age": 30
     });
     let res = RestHttpResponse {
@@ -229,11 +197,20 @@ async fn hello(path: web::Path<String>) -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("App starting on: {:?}", "127.0.0.1:8080");
+    env::set_var("RUST_LOG", "debug");
+    env::set_var("SHOW_SQL", "true");
+    env_logger::init();
+
+    info!("App starting on: {}", "http://127.0.0.1:8080");
     HttpServer::new(|| {
         App::new()
+            .wrap(middleware::Compress::default())
+            .wrap(middleware::Logger::default())
             .route("/", web::get().to(index))
             .route("/test/{name}", web::get().to(test))
             .service(hello)
-    }).bind("127.0.0.1:8080")?.run().await
+    })
+        .bind("127.0.0.1:8080")?
+        .run()
+        .await
 }

@@ -33,6 +33,7 @@ fn join_path_test() {
 }
 
 #[cfg(test)]
+#[cfg(feature = "local_runtime")]
 mod k8s_api_test {
     use rust_notes::k8s::api::HttpClient;
     use rust_notes::k8s::models::HttpKubeConfig;
@@ -52,7 +53,12 @@ mod k8s_api_test {
         assert_eq!(check(), true);
         let config = HttpKubeConfig::read_from(KUBE_CONFIG_FILE);
         let http_client = HttpClient::new(config);
-        assert_eq!(http_client.url(&["api", "v1", "pods"], &[]).ends_with("/api/v1/pods"), true);
+        assert_eq!(
+            http_client
+                .url(&["api", "v1", "pods"], &[])
+                .ends_with("/api/v1/pods"),
+            true
+        );
     }
 
     #[test]
@@ -83,15 +89,19 @@ mod k8s_api_test {
         //
         // kubectl get po -n kube-system -l tier=control-plane
         let url = http_client.url(
-            &["/api/v1/namespaces", "kube-system", "pods", ],
-            &["labelSelector=tier%3Dcontrol-plane", "limit=500"]);
+            &["/api/v1/namespaces", "kube-system", "pods"],
+            &["labelSelector=tier%3Dcontrol-plane", "limit=500"],
+        );
         println!("{}", url);
         let response = http_client.client.get(url).send().unwrap();
         let json_obj: serde_json::Value = JsonConverter::convert_object(&response.text().unwrap());
         let default_item = serde_json::json!([]);
         let items = json_obj.get("items").unwrap_or(&default_item);
         for pod in items.as_array().unwrap() {
-            println!("Pod: {} -> {}", pod["metadata"]["name"], pod["metadata"]["labels"]["tier"])
+            println!(
+                "Pod: {} -> {}",
+                pod["metadata"]["name"], pod["metadata"]["labels"]["tier"]
+            )
         }
     }
 

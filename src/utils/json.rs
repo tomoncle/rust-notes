@@ -40,7 +40,6 @@ use serde_json::{json, Value};
 根据项目的需求和设计，您可以根据实际情况选择适合的可见性修饰符来控制项的访问范围。
  */
 
-
 pub struct JsonConverter;
 
 impl JsonConverter {
@@ -66,7 +65,10 @@ mod tests {
 
     #[test]
     fn convert_json_test() {
-        let person = Person { name: "Alice".to_string(), age: 30 };
+        let person = Person {
+            name: "Alice".to_string(),
+            age: 30,
+        };
         let json_str = JsonConverter::convert_json(&person);
         assert_eq!(json_str.is_empty(), false);
     }
@@ -74,8 +76,14 @@ mod tests {
     #[test]
     fn convert_json_array_test() {
         let persons = vec![
-            Person { name: "Bob".to_string(), age: 25 },
-            Person { name: "Charlie".to_string(), age: 35 },
+            Person {
+                name: "Bob".to_string(),
+                age: 25,
+            },
+            Person {
+                name: "Charlie".to_string(),
+                age: 35,
+            },
         ];
         let json_array_str = JsonConverter::convert_json_array(&persons);
         assert_eq!(json_array_str.is_empty(), false);
@@ -83,7 +91,10 @@ mod tests {
 
     #[test]
     fn convert_object() {
-        let person = Person { name: "Alice".to_string(), age: 30 };
+        let person = Person {
+            name: "Alice".to_string(),
+            age: 30,
+        };
         let json_str = JsonConverter::convert_json(&person);
         let json_obj: Person = JsonConverter::convert_object(&json_str);
         assert_eq!(json_obj.age, 30);
