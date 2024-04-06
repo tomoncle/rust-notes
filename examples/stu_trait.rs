@@ -22,8 +22,6 @@
  * SOFTWARE.
  */
 
-use diesel::{Connection, MysqlConnection, PgConnection, SqliteConnection};
-
 // 使用 trait objects 的 Box<dyn Database> 来存储不同类型的连接，并在运行时根据条件选择具体的连接类型。
 //
 // 通过这种方式，您可以在 Rust 中实现类似动态加载不同类型连接的功能。
@@ -55,39 +53,6 @@ impl Database for Sqlite {
     }
 }
 
-
-<<<<<<< HEAD
-
-
-struct DBDriver<T> {
-    connection: T,
-}
-
-impl DBDriver<PgConnection> {
-    fn new(url: &str) -> Self {
-        DBDriver {
-            connection: PgConnection::establish(url.clone()).expect("connect error："),
-        }
-    }
-}
-
-impl DBDriver<SqliteConnection> {
-    fn new(url: &str) -> Self {
-        DBDriver {
-            connection: SqliteConnection::establish(url.clone()).expect("connect error："),
-        }
-    }
-}
-
-impl DBDriver<MysqlConnection> {
-    fn new(url: &str) -> Self {
-        DBDriver {
-            connection: MysqlConnection::establish(url.clone()).expect("connect error："),
-        }
-    }
-}
-
-
 fn main() {
     let value = "mysql";
     let db: Box<dyn Database> = if value.to_lowercase().starts_with("mysql") {
@@ -99,7 +64,3 @@ fn main() {
     };
     db.connection("localhost");
 }
-=======
-    connection.establish_connection("some_url_here");
-}
->>>>>>> 8c25717ae16d894546bfd2c4a0fd664648e7bb68
