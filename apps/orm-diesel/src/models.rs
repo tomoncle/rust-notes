@@ -22,7 +22,12 @@
  * SOFTWARE.
  */
 
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+
+use crate::schema::posts;
+use crate::schema::t_blueprint;
 
 /*
 CREATE TABLE posts (
@@ -44,11 +49,120 @@ pub struct Post {
     pub published: bool,
 }
 
-use crate::schema::posts;
-
 #[derive(Insertable)]
 #[diesel(table_name = posts)]
 pub struct NewPost<'a> {
     pub title: &'a str,
     pub body: &'a str,
+}
+
+#[derive(Queryable, Selectable, Debug)]
+#[diesel(table_name = t_blueprint)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Blueprint {
+    pub blueprint_id: i32,
+    pub name: String,
+    pub description: Option<String>,
+    pub user_id: String,
+    pub config: String,
+    pub state: bool,
+    pub create_time: Option<NaiveDateTime>,
+    pub update_time: Option<NaiveDateTime>,
+    pub is_deleted: bool,
+    pub delete_time: Option<NaiveDateTime>,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = t_blueprint)]
+pub struct NewBlueprint<'a> {
+    pub name: &'a str,
+    pub description: &'a str,
+    pub user_id: &'a str,
+    pub config: &'a str,
+    pub create_time: &'a NaiveDateTime,
+    pub update_time: &'a NaiveDateTime,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BlueprintView {
+    pub blueprint_id: i32,
+    pub name: String,
+    pub description: Option<String>,
+    pub user_id: String,
+    pub config: String,
+    pub state: bool,
+    pub create_time: Option<String>,
+    pub update_time: Option<String>,
+    pub is_deleted: bool,
+    pub delete_time: Option<String>,
+}
+
+
+impl From<Blueprint> for BlueprintView {
+    fn from(blueprint: Blueprint) -> Self {
+        BlueprintView {
+            blueprint_id: blueprint.blueprint_id,
+            name: blueprint.name,
+            description: blueprint.description,
+            user_id: blueprint.user_id,
+            config: blueprint.config,
+            state: blueprint.state,
+            create_time: blueprint.create_time.map(|dt| dt.to_string()),
+            update_time: blueprint.update_time.map(|dt| dt.to_string()),
+            is_deleted: blueprint.is_deleted,
+            delete_time: blueprint.delete_time.map(|dt| dt.to_string()),
+        }
+    }
+}
+
+impl From<&Blueprint> for BlueprintView {
+    fn from(blueprint: &Blueprint) -> Self {
+        BlueprintView {
+            blueprint_id: blueprint.blueprint_id,
+            name: blueprint.name.clone(),
+            description: blueprint.description.clone(),
+            user_id: blueprint.user_id.clone(),
+            config: blueprint.config.clone(),
+            state: blueprint.state,
+            create_time: blueprint.create_time.map(|dt| dt.to_string()),
+            update_time: blueprint.update_time.map(|dt| dt.to_string()),
+            is_deleted: blueprint.is_deleted,
+            delete_time: blueprint.delete_time.map(|dt| dt.to_string()),
+        }
+    }
+}
+
+impl From<BlueprintView> for Blueprint {
+    fn from(view: BlueprintView) -> Self {
+        Blueprint {
+            blueprint_id: view.blueprint_id,
+            name: view.name,
+            description: view.description,
+            user_id: view.user_id,
+            config: view.config,
+            state: view.state,
+            create_time: view.create_time.as_ref().and_then(|dt| NaiveDateTime::parse_from_str(dt, "%Y-%m-%dT%H:%M:%S").ok()),
+            update_time: view.update_time.as_ref().and_then(|dt| NaiveDateTime::parse_from_str(dt, "%Y-%m-%dT%H:%M:%S").ok()),
+            is_deleted: view.is_deleted,
+            delete_time: view.delete_time.as_ref().and_then(|dt| NaiveDateTime::parse_from_str(dt, "%Y-%m-%dT%H:%M:%S").ok()),
+        }
+    }
+}
+
+impl From<&BlueprintView> for Blueprint {
+   fn from(view: &BlueprintView) -> Self {
+        Blueprint {
+            blueprint_id: view.blueprint_id,
+            name: view.name.clone(),
+            description: view.description.clone(),
+            user_id: view.user_id.clone(),
+            config: view.config.clone(),
+            state: view.state,
+            create_time: view.create_time.as_ref().and_then(|dt| NaiveDateTime::parse_from_str(dt, "%Y-%m-%dT%H:%M:%S").ok()),
+            update_time: view.update_time.as_ref().and_then(|dt| NaiveDateTime::parse_from_str(dt, "%Y-%m-%dT%H:%M:%S").ok()),
+            is_deleted: view.is_deleted,
+            delete_time: view.delete_time.as_ref().and_then(|dt| NaiveDateTime::parse_from_str(dt, "%Y-%m-%dT%H:%M:%S").ok()),
+        }
+    }
 }
