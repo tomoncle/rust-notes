@@ -51,7 +51,10 @@ DROP TABLE posts
 ### 4.运行数据库迁移，以创建数据库表, 并生成 `src/schema.rs` 文件和 `diesel::table!` 宏代码:
 
 ```bash
-$ diesel migration run 
+$ diesel migration run
+ 
+# 对指定应用执行下面命令
+$ diesel migration run --migration-dir migrations/2024-03-20-072929_create_posts
 ```
 
 `src/schema.rs` 示例：
