@@ -22,34 +22,26 @@
  * SOFTWARE.
  */
 
-// @generated automatically by Diesel CLI.
+use diesel::prelude::*;
+use orm_diesel::*;
+use orm_diesel::schema::t_posts::dsl::t_posts;
 
-diesel::table! {
-    t_posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
-        published -> Bool,
+// cargo run --bin post_list
+fn main() {
+    use self::schema::t_posts::dsl::*;
+
+    let connection = &mut db::db_conn();
+    let results = t_posts
+        .filter(published.eq(true))
+        .limit(5)
+        .select(model::posts::Post::as_select())
+        .load(connection)
+        .expect("Error loading posts");
+
+    println!("Displaying {} posts", results.len());
+    for post in results {
+        println!("{}", post.title);
+        println!("-----------\n");
+        println!("{}", post.body);
     }
 }
-
-diesel::table! {
-    t_user (user_id) {
-        user_id -> Int4,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        config -> Text,
-        state -> Bool,
-        create_time -> Nullable<Timestamptz>,
-        update_time -> Nullable<Timestamptz>,
-        is_deleted -> Bool,
-        delete_time -> Nullable<Timestamptz>,
-    }
-}
-
-diesel::allow_tables_to_appear_in_same_query!(
-    t_posts,
-    t_user,
-);

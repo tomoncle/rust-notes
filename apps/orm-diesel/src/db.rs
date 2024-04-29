@@ -21,35 +21,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use std::env;
 
-// @generated automatically by Diesel CLI.
+use diesel::pg::PgConnection;
+use diesel::prelude::*;
+use diesel::prelude::*;
+use dotenvy::dotenv;
 
-diesel::table! {
-    t_posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
-        published -> Bool,
-    }
+pub fn db_conn() -> PgConnection {
+    dotenv().ok(); // 读取 .env 文件
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-diesel::table! {
-    t_user (user_id) {
-        user_id -> Int4,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        config -> Text,
-        state -> Bool,
-        create_time -> Nullable<Timestamptz>,
-        update_time -> Nullable<Timestamptz>,
-        is_deleted -> Bool,
-        delete_time -> Nullable<Timestamptz>,
-    }
-}
-
-diesel::allow_tables_to_appear_in_same_query!(
-    t_posts,
-    t_user,
-);
+// pub fn create_post(conn: &mut PgConnection, title: &str, body: &str) -> Post {
+//     use crate::schema::posts;
+//
+//     let new_post = NewPost { title, body };
+//
+//     diesel::insert_into(posts::table)
+//         .values(&new_post)
+//         .returning(Post::as_returning())
+//         .get_result(conn)
+//         .expect("Error saving new post")
+// }

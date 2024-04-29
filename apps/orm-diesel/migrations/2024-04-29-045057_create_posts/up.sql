@@ -22,26 +22,11 @@
  * SOFTWARE.
  */
 
-use diesel::prelude::*;
-
-use orm_diesel::*;
-
-use self::models::Post;
-
-// cargo run --bin publish_post 1
-fn main() {
-    use self::schema::posts::dsl::{posts, published};
-
-    let id = std::env::args()
-        .nth(1)
-        .expect("publish_post requires a post id")
-        .parse::<i32>()
-        .expect("Invalid ID");
-    let connection = &mut establish_connection();
-    let post = diesel::update(posts.find(1))
-        .set(published.eq(true))
-        .returning(Post::as_returning())
-        .get_result(connection)
-        .unwrap();
-    println!("Published post {}", post.title);
-}
+-- Your SQL goes here
+create table if not exists public.t_posts
+(
+    id        SERIAL PRIMARY KEY,
+    title     character varying not null,
+    body      text              not null,
+    published boolean           not null default false
+);

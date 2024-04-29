@@ -22,34 +22,41 @@
  * SOFTWARE.
  */
 
-// @generated automatically by Diesel CLI.
+use chrono::{Duration, Utc};
+use diesel::{RunQueryDsl, SelectableHelper};
 
-diesel::table! {
-    t_posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
-        published -> Bool,
-    }
+use orm_diesel::model::user::*;
+
+fn get_cst_time() -> chrono::NaiveDateTime {
+    let now_utc: chrono::DateTime<Utc> = Utc::now();
+    let now_naive: chrono::NaiveDateTime = now_utc.naive_local();
+    let now_cst: chrono::NaiveDateTime = now_naive + Duration::hours(8);
+    now_cst
 }
 
-diesel::table! {
-    t_user (user_id) {
-        user_id -> Int4,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        config -> Text,
-        state -> Bool,
-        create_time -> Nullable<Timestamptz>,
-        update_time -> Nullable<Timestamptz>,
-        is_deleted -> Bool,
-        delete_time -> Nullable<Timestamptz>,
-    }
+pub fn create_user() -> User {
+    use orm_diesel::schema::t_user;
+    use orm_diesel::db::db_conn;
+    let new_post = NewUser {
+        name: "test".to_string(),
+        description: None,
+        config: "hello world".to_string(),
+        state: true,
+        create_time: Some(get_cst_time()),
+        update_time: Some(get_cst_time()),
+    };
+
+    diesel::insert_into(t_user::table)
+        .values(&new_post)
+        .returning(User::as_returning())
+        .get_result(&mut db_conn())
+        .expect("Error saving new post")
 }
 
-diesel::allow_tables_to_appear_in_same_query!(
-    t_posts,
-    t_user,
-);
+fn main() {
+    let user = create_user();
+    let view = UserView::from(&user);
+    let value = serde_json::to_string_pretty(&view).unwrap();
+    println!("{}", value);
+    println!("{:?}", user)
+}

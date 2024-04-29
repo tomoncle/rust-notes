@@ -22,34 +22,33 @@
  * SOFTWARE.
  */
 
-// @generated automatically by Diesel CLI.
+use std::env::args;
 
-diesel::table! {
-    t_posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
-        published -> Bool,
+use diesel::prelude::*;
+
+use orm_diesel::*;
+
+// cargo run --bin post_get 1
+fn main() {
+    use self::schema::t_posts::dsl::*;
+
+    let post_id = args()
+        .nth(1)
+        .expect("get_post requires a post id")
+        .parse::<i32>()
+        .expect("Invalid ID");
+
+    let connection = &mut db::db_conn();
+
+    let post = t_posts
+        .find(post_id)
+        .select(model::posts::Post::as_select())
+        .first(connection)
+        .optional(); // This allows for returning an Option<Post>, otherwise it will throw an error
+
+    match post {
+        Ok(Some(post)) => println!("Post with id: {} has a title: {}", post.id, post.title),
+        Ok(None) => println!("Unable to find post {}", post_id),
+        Err(_) => println!("An error occured while fetching post {}", post_id),
     }
 }
-
-diesel::table! {
-    t_user (user_id) {
-        user_id -> Int4,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        config -> Text,
-        state -> Bool,
-        create_time -> Nullable<Timestamptz>,
-        update_time -> Nullable<Timestamptz>,
-        is_deleted -> Bool,
-        delete_time -> Nullable<Timestamptz>,
-    }
-}
-
-diesel::allow_tables_to_appear_in_same_query!(
-    t_posts,
-    t_user,
-);

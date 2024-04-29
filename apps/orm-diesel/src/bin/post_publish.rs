@@ -22,34 +22,39 @@
  * SOFTWARE.
  */
 
-// @generated automatically by Diesel CLI.
+use diesel::prelude::*;
 
-diesel::table! {
-    t_posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
-        published -> Bool,
-    }
+use orm_diesel::*;
+
+
+// cargo run --bin post_publish 1
+fn main() {
+    use self::schema::t_posts::dsl::*;
+
+    let input_id = match std::env::args().nth(1) {
+        Some(val) => val,
+        None => {
+            eprintln!("publish_post requires a post id");
+            return;
+        }
+    };
+
+    let parsed_id = match input_id.parse::<i32>() {
+        Ok(val) => val,
+        Err(_) => {
+            eprintln!("Invalid ID");
+            return;
+        }
+    };
+
+    // Now you can use parsed_id as an i32
+    println!("Parsed ID: {}", parsed_id);
+
+    let connection = &mut db::db_conn();
+    let post = diesel::update(t_posts.find(parsed_id))
+        .set(published.eq(true))
+        .returning(model::posts::Post::as_returning())
+        .get_result(connection)
+        .unwrap();
+    println!("Published post {}", post.title);
 }
-
-diesel::table! {
-    t_user (user_id) {
-        user_id -> Int4,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        config -> Text,
-        state -> Bool,
-        create_time -> Nullable<Timestamptz>,
-        update_time -> Nullable<Timestamptz>,
-        is_deleted -> Bool,
-        delete_time -> Nullable<Timestamptz>,
-    }
-}
-
-diesel::allow_tables_to_appear_in_same_query!(
-    t_posts,
-    t_user,
-);

@@ -22,23 +22,38 @@
  * SOFTWARE.
  */
 
-use std::env::args;
+use std::env;
+use actix_web::{App, HttpServer, middleware};
+use log::info;
+use crate::api::user::*;
 
-use diesel::prelude::*;
+mod db;
+mod model;
+mod repository;
+mod schema;
+mod utils;
+mod api;
 
-use orm_diesel::*;
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    env::set_var("RUST_LOG", "debug");
+    env::set_var("SHOW_SQL", "true");
+    env_logger::init();
 
-// cargo run --bin delete_post hello
-fn main() {
-    use self::schema::posts::dsl::*;
-
-    let target = args().nth(1).expect("Expected a target to match against");
-    let pattern = format!("%{}%", target);
-
-    let connection = &mut establish_connection();
-    let num_deleted = diesel::delete(posts.filter(title.like(pattern)))
-        .execute(connection)
-        .expect("Error deleting posts");
-
-    println!("Deleted {} posts", num_deleted);
+    info!("App starting on: {}", "http://127.0.0.1:8080");
+    HttpServer::new(|| {
+        App::new()
+            .wrap(middleware::Compress::default())
+            .wrap(middleware::Logger::default())
+            // .route("/", web::get().to(index))
+            // .route("/test/{name}", web::get().to(test))
+            .service(list)
+            .service(get)
+            .service(create)
+            .service(update)
+            .service(delete)
+    })
+        .bind("127.0.0.1:8080")?
+        .run()
+        .await
 }

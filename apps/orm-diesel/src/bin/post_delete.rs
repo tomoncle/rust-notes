@@ -22,26 +22,23 @@
  * SOFTWARE.
  */
 
-use self::models::*;
+use std::env::args;
+
 use diesel::prelude::*;
+
 use orm_diesel::*;
 
-// cargo run --bin show_post
+// cargo run --bin post_delete hello
 fn main() {
-    use self::schema::posts::dsl::*;
+    use self::schema::t_posts::dsl::*;
 
-    let connection = &mut establish_connection();
-    let results = posts
-        .filter(published.eq(true))
-        .limit(5)
-        .select(Post::as_select())
-        .load(connection)
-        .expect("Error loading posts");
+    let target = args().nth(1).expect("Expected a target to match against");
+    let pattern = format!("%{}%", target);
 
-    println!("Displaying {} posts", results.len());
-    for post in results {
-        println!("{}", post.title);
-        println!("-----------\n");
-        println!("{}", post.body);
-    }
+    let connection = &mut db::db_conn();
+    let num_deleted = diesel::delete(t_posts.filter(title.like(pattern)))
+        .execute(connection)
+        .expect("Error deleting posts");
+
+    println!("Deleted {} posts", num_deleted);
 }

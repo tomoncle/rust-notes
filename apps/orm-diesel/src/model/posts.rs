@@ -21,35 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+use diesel::{Insertable, Queryable, Selectable};
 
-// @generated automatically by Diesel CLI.
+use crate::schema::t_posts;
 
-diesel::table! {
-    t_posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
-        published -> Bool,
-    }
+#[derive(Queryable, Selectable)]
+// Queryable 将生成从 SQL 查询加载Post结构所需的所有代码;
+// Selectable 根据模型类型构造匹配的 select 子句
+#[diesel(table_name = t_posts)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct Post {
+    pub id: i32,
+    pub title: String,
+    pub body: String,
+    pub published: bool,
 }
 
-diesel::table! {
-    t_user (user_id) {
-        user_id -> Int4,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        config -> Text,
-        state -> Bool,
-        create_time -> Nullable<Timestamptz>,
-        update_time -> Nullable<Timestamptz>,
-        is_deleted -> Bool,
-        delete_time -> Nullable<Timestamptz>,
-    }
+#[derive(Insertable)]
+#[diesel(table_name = t_posts)]
+pub struct NewPost<'a> {
+    pub title: &'a str,
+    pub body: &'a str,
 }
-
-diesel::allow_tables_to_appear_in_same_query!(
-    t_posts,
-    t_user,
-);

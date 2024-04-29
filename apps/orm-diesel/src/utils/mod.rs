@@ -22,34 +22,26 @@
  * SOFTWARE.
  */
 
-// @generated automatically by Diesel CLI.
+pub mod time;
+pub mod http;
 
-diesel::table! {
-    t_posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
-        published -> Bool,
-    }
-}
-
-diesel::table! {
-    t_user (user_id) {
-        user_id -> Int4,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        config -> Text,
-        state -> Bool,
-        create_time -> Nullable<Timestamptz>,
-        update_time -> Nullable<Timestamptz>,
-        is_deleted -> Bool,
-        delete_time -> Nullable<Timestamptz>,
-    }
-}
-
-diesel::allow_tables_to_appear_in_same_query!(
-    t_posts,
-    t_user,
-);
+// #[macro_use]
+// pub mod macros {
+//     macro_rules! show_sql {
+//     ($query:expr) => {
+//         // let sql_query = debug_query::<diesel::pg::Pg, _>(&query);
+//         // debug!("{:?}", sql_query);
+//         match std::env::var("SHOW_SQL") {
+//             Ok(s) => {
+//                 if s == "true" {
+//                     log::debug!(
+//                         "\x1b[31m{:?}\x1b[0m",
+//                         diesel::debug_query::<diesel::pg::Pg, _>($query)
+//                     );
+//                 }
+//             }
+//             Err(_) => {}
+//         };
+//     };
+// }
+// }

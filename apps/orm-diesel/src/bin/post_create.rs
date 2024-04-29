@@ -22,34 +22,44 @@
  * SOFTWARE.
  */
 
-// @generated automatically by Diesel CLI.
+use std::io::{Read, stdin};
 
-diesel::table! {
-    t_posts (id) {
-        id -> Int4,
-        title -> Varchar,
-        body -> Text,
-        published -> Bool,
-    }
+use diesel::{RunQueryDsl, SelectableHelper};
+
+use orm_diesel::db::db_conn;
+use orm_diesel::model::posts::NewPost;
+use orm_diesel::model::posts::Post;
+use orm_diesel::schema::t_posts;
+
+#[cfg(not(windows))]
+const EOF: &str = "CTRL+D";
+
+#[cfg(windows)]
+const EOF: &str = "CTRL+Z";
+
+// cargo run --bin post_create
+fn main() {
+    let connection = &mut db_conn();
+
+    let mut title = String::new();
+    let mut body = String::new();
+
+    println!("What would you like your title to be?");
+    stdin().read_line(&mut title).unwrap();
+    let title = title.trim_end(); // Remove the trailing newline
+
+    println!(
+        "\nOk! Let's write {} (Press {} when finished)\n",
+        title, EOF
+    );
+    stdin().read_to_string(&mut body).unwrap();
+    let new_post = NewPost { title, body: body.as_str() };
+
+    let post = diesel::insert_into(t_posts::table)
+        .values(&new_post)
+        .returning(Post::as_returning())
+        .get_result(connection)
+        .expect("Error saving new post");
+
+    println!("\nSaved draft {} with id {}", title, post.id);
 }
-
-diesel::table! {
-    t_user (user_id) {
-        user_id -> Int4,
-        #[max_length = 255]
-        name -> Varchar,
-        #[max_length = 255]
-        description -> Nullable<Varchar>,
-        config -> Text,
-        state -> Bool,
-        create_time -> Nullable<Timestamptz>,
-        update_time -> Nullable<Timestamptz>,
-        is_deleted -> Bool,
-        delete_time -> Nullable<Timestamptz>,
-    }
-}
-
-diesel::allow_tables_to_appear_in_same_query!(
-    t_posts,
-    t_user,
-);
