@@ -22,12 +22,37 @@
  * SOFTWARE.
  */
 
-use orm_diesel::model::user::UpdateUser;
+use diesel::associations::HasTable;
+use orm_diesel::model::user::{UpdateUser, UpdateUserBuilder, User};
 
 #[test]
-fn test_some_function() {
+fn test_update_user_default() {
+    // https://docs.rs/derive_builder/latest/derive_builder/
+
     // 编写测试用例
     let user: UpdateUser = Default::default();
-    println!("user:{:?}", user);
+    println!("user default: {:?}", user);
     assert_eq!(user.name, None);
+
+    let build1: UpdateUser = UpdateUserBuilder::default()
+        .build()
+        .unwrap_or_default();
+    println!("user builder default1 :{:?}", build1);
+    assert_eq!(build1.name, None);
+
+    let build2: UpdateUser = UpdateUserBuilder::default()
+        .name(Some("test".to_string()))
+        .build()
+        .unwrap();
+    ;
+    println!("user builder default2 :{:?}", build2);
+    assert_eq!(build2.name.unwrap_or_default(), "test");
+
+}
+
+#[test]
+fn test_user_attr() {
+    // 编写测试用例
+    let table = User::table();
+    println!("user: {:?}", table);
 }

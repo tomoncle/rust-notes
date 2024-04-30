@@ -61,8 +61,11 @@ pub struct NewUser {
 // Debug      : 允许使用 {:?} 格式打印结构体的内容。
 // AsChangeset: 允许将结构体转换为 Changeset 对象，用于更新数据库记录。
 // Default    : 允许使用 Default::default() 创建结构体的默认实例。
-// Builder    : 允许使用 Builder 模式创建结构体实例。需要配置外部依赖，可以使用 derive_builder 包
+// Builder    : 允许使用 Builder 模式创建结构体实例。需要配置外部依赖 derive_builder 库
+//
+// #[builder(setter(into), default)] 是 derive_builder 库提供的一个属性, 用于控制 Builder 模式的行为。
 #[derive(Debug, AsChangeset, Default, Builder)]
+#[builder(setter(into), default)]
 #[diesel(table_name = t_user)]
 pub struct UpdateUser {
     pub name: Option<String>,

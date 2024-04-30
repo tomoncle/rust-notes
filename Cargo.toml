@@ -34,7 +34,7 @@ actix-web = "4.4.0"
 ### database
 diesel = { version = "2.1.4", features = ["sqlite", "mysql", "postgres"] }
 # diesel = { version = "2.1.4", features = ["sqlite"] }
-libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
+libsqlite3-sys = { version = "0.28.0", features = ["bundled"] }
 dotenv = "0.15.0"
 ### 视频处理
 # ffmpeg = "0.3.0"
@@ -61,4 +61,6 @@ env_logger = "0.11.1"
 ### 自定义宏
 proc-macro2 = "1.0.78"
 quote = "1.0.35"
-syn = "1.0.109"
+syn = "2.0.48"
+### 拓展结构体的builer实现： https://docs.rs/derive_builder/latest/derive_builder/
+derive_builder = "0.13.0"
