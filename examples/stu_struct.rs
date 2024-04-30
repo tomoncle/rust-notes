@@ -206,7 +206,10 @@ mod tests {
         // https://docs.rs/derive_builder/latest/derive_builder/
 
         // 编写测试用例
-        let view_info: ViewInfo = Default::default();
+        let mut view_info: ViewInfo = Default::default();
+        println!("default : {:?}", view_info);
+
+        view_info.name = "hello".to_string();
         println!("default : {:?}", view_info);
     }
 }
