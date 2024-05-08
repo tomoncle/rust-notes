@@ -25,12 +25,11 @@
 use std::env::args;
 
 use diesel::prelude::*;
-
 use orm_diesel::db::db_conn;
 
 // cargo run --bin post_delete hello
 fn main() {
-    use self::schema::t_posts::dsl::*;
+    use orm_diesel::schema::t_posts::dsl::*;
 
     let target = args().nth(1).expect("Expected a target to match against");
     let pattern = format!("%{}%", target);
