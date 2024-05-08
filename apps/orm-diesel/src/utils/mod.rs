@@ -22,26 +22,20 @@
  * SOFTWARE.
  */
 
+#[allow(dead_code)]
 pub mod time;
+#[allow(dead_code)]
 pub mod http;
 
-// #[macro_use]
-// pub mod macros {
-//     macro_rules! show_sql {
-//     ($query:expr) => {
-//         // let sql_query = debug_query::<diesel::pg::Pg, _>(&query);
-//         // debug!("{:?}", sql_query);
-//         match std::env::var("SHOW_SQL") {
-//             Ok(s) => {
-//                 if s == "true" {
-//                     log::debug!(
-//                         "\x1b[31m{:?}\x1b[0m",
-//                         diesel::debug_query::<diesel::pg::Pg, _>($query)
-//                     );
-//                 }
-//             }
-//             Err(_) => {}
-//         };
-//     };
-// }
-// }
+pub fn show_sql<T: diesel::query_builder::QueryFragment<diesel::pg::Pg>>(query: &T) {
+    // println!("\x1b[31mSQL: {}\x1b[0m\n", diesel::debug_query::<diesel::pg::Pg, _>(query).to_string());
+    match std::env::var("SHOW_SQL") {
+        Ok(bool) => {
+            if bool == "true" {
+                log::debug!("\x1b[31mSQL ==> {}\x1b[0m",
+                    diesel::debug_query::<diesel::pg::Pg, _>(query).to_string());
+            }
+        }
+        Err(_) => {}
+    };
+}

@@ -22,7 +22,11 @@
  * SOFTWARE.
  */
 
+use std::env;
+
 use diesel::associations::HasTable;
+use log::warn;
+
 use orm_diesel::model::user::{UpdateUser, UpdateUserBuilder, User};
 
 #[test]
@@ -44,7 +48,6 @@ fn test_update_user_default() {
         .name(Some("test".to_string()))
         .build()
         .unwrap();
-    ;
     println!("user builder default2 :{:?}", build2);
     assert_eq!(build2.name.unwrap_or_default(), "test");
 
@@ -55,4 +58,11 @@ fn test_user_attr() {
     // 编写测试用例
     let table = User::table();
     println!("user: {:?}", table);
+}
+
+#[test]
+fn test_log() {
+    env::set_var("RUST_LOG", "debug");
+    env_logger::init();
+    warn!("hello world");
 }

@@ -25,7 +25,7 @@
 use diesel::prelude::*;
 
 use orm_diesel::*;
-
+use orm_diesel::db::db_conn;
 
 // cargo run --bin post_publish 1
 fn main() {
@@ -50,7 +50,7 @@ fn main() {
     // Now you can use parsed_id as an i32
     println!("Parsed ID: {}", parsed_id);
 
-    let connection = &mut db::db_conn();
+    let connection = &mut db_conn().unwrap();
     let post = diesel::update(t_posts.find(parsed_id))
         .set(published.eq(true))
         .returning(model::posts::Post::as_returning())

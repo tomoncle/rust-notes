@@ -22,11 +22,67 @@
  * SOFTWARE.
  */
 
+use actix_web::web;
 use serde::Serialize;
+use serde_json::Value;
 
 #[derive(Serialize)]
 pub struct RestHttpResponse<T> {
-    pub(crate) code: i32,
-    pub(crate) message: String,
-    pub(crate) data: T,
+    pub code: i32,
+    pub message: String,
+    pub data: Option<T>,
+}
+
+impl<T> RestHttpResponse<T> {
+    pub fn ok(data: Option<T>) -> RestHttpResponse<T> {
+        RestHttpResponse {
+            code: 200,
+            message: "success".to_string(),
+            data,
+        }
+    }
+
+    pub fn err(code: i32, message: String) -> RestHttpResponse<T> {
+        RestHttpResponse {
+            code,
+            message,
+            data: None,
+        }
+    }
+
+    pub fn server_err(message: String) -> RestHttpResponse<T> {
+        Self::err(500, message)
+    }
+
+    pub fn bad_request(message: String) -> RestHttpResponse<T> {
+        Self::err(400, message)
+    }
+
+    pub fn not_found(message: String) -> RestHttpResponse<T> {
+        Self::err(404, message)
+    }
+}
+
+#[derive(Debug)]
+pub struct QueryParser {
+    pub query: web::Query<Value>,
+}
+
+impl QueryParser {
+    pub fn i64(&self, key: &str, default: i64) -> i64 {
+        self.query.get(key)
+            .and_then(|p| p.as_str())
+            .and_then(|p| p.parse::<i64>().ok())
+            .unwrap_or(default)
+    }
+}
+
+// handle_result(User::update(data))
+pub fn handle_result<T, E: std::fmt::Display>(result: Result<T, E>) -> web::Json<RestHttpResponse<T>> {
+    match result {
+        Ok(item) => {
+            web::Json(RestHttpResponse::ok(Some(item)))
+        }
+        Err(error) => web::Json(RestHttpResponse::server_err(error.to_string())),
+    }
 }

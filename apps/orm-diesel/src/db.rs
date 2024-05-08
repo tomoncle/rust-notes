@@ -22,27 +22,66 @@
  * SOFTWARE.
  */
 use std::env;
+use std::sync::Once;
 
 use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use diesel::prelude::*;
+use diesel::r2d2;
+use diesel::r2d2::{ConnectionManager, HandleEvent, PooledConnection};
+use diesel::r2d2::event::{AcquireEvent, CheckinEvent, CheckoutEvent, ReleaseEvent, TimeoutEvent};
 use dotenvy::dotenv;
+use log::{debug, error, info};
 
-pub fn db_conn() -> PgConnection {
-    dotenv().ok(); // 读取 .env 文件
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+#[derive(Debug)]
+struct PGEventHandler;
+
+impl HandleEvent for PGEventHandler {
+    fn handle_acquire(&self, event: AcquireEvent) {
+        debug!("acquire  connection： {:?}", event);
+    }
+
+    fn handle_release(&self, event: ReleaseEvent) {
+        debug!("release  connection： {:?}", event);
+    }
+
+    fn handle_checkout(&self, event: CheckoutEvent) {
+        debug!("checkout connection： {:?}", event);
+    }
+
+    fn handle_timeout(&self, event: TimeoutEvent) {
+        debug!("connection  timeout： {:?}", event);
+    }
+
+    fn handle_checkin(&self, event: CheckinEvent) {
+        debug!("checkin  connection： {:?}", event);
+    }
 }
 
-// pub fn create_post(conn: &mut PgConnection, title: &str, body: &str) -> Post {
-//     use crate::schema::posts;
-//
-//     let new_post = NewPost { title, body };
-//
-//     diesel::insert_into(posts::table)
-//         .values(&new_post)
-//         .returning(Post::as_returning())
-//         .get_result(conn)
-//         .expect("Error saving new post")
-// }
+
+static INIT: Once = Once::new();
+static mut POOL: Option<r2d2::Pool<ConnectionManager<PgConnection>>> = None;
+
+fn db_pool() -> &'static r2d2::Pool<ConnectionManager<PgConnection>> {
+    unsafe {
+        INIT.call_once(|| {
+            info!("initial load connection pool.");
+            dotenv().ok(); // 读取 .env 文件
+            let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+            let manager = ConnectionManager::<PgConnection>::new(database_url);
+            POOL = Some(r2d2::Pool::builder()
+                .event_handler(Box::new(PGEventHandler))
+                .max_size(10)
+                .min_idle(Some(5))
+                .build(manager).unwrap());
+        });
+        POOL.as_ref().unwrap()
+    }
+}
+
+
+pub fn db_conn() -> Result<PooledConnection<ConnectionManager<PgConnection>>, anyhow::Error> {
+    db_pool().get().map_err(|err| {
+        error!("获取数据库连接失败: {:?}", err);
+        anyhow::Error::from(err)
+    })
+}
+

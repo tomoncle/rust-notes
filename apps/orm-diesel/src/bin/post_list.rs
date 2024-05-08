@@ -23,14 +23,15 @@
  */
 
 use diesel::prelude::*;
+
 use orm_diesel::*;
-use orm_diesel::schema::t_posts::dsl::t_posts;
+use orm_diesel::db::db_conn;
 
 // cargo run --bin post_list
 fn main() {
     use self::schema::t_posts::dsl::*;
 
-    let connection = &mut db::db_conn();
+    let connection = &mut db_conn().unwrap();
     let results = t_posts
         .filter(published.eq(true))
         .limit(5)

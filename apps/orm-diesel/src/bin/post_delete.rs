@@ -26,7 +26,7 @@ use std::env::args;
 
 use diesel::prelude::*;
 
-use orm_diesel::*;
+use orm_diesel::db::db_conn;
 
 // cargo run --bin post_delete hello
 fn main() {
@@ -35,7 +35,7 @@ fn main() {
     let target = args().nth(1).expect("Expected a target to match against");
     let pattern = format!("%{}%", target);
 
-    let connection = &mut db::db_conn();
+    let connection = &mut db_conn().unwrap();
     let num_deleted = diesel::delete(t_posts.filter(title.like(pattern)))
         .execute(connection)
         .expect("Error deleting posts");

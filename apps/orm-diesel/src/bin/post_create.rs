@@ -39,7 +39,7 @@ const EOF: &str = "CTRL+Z";
 
 // cargo run --bin post_create
 fn main() {
-    let connection = &mut db_conn();
+    let connection = &mut db_conn().unwrap();
 
     let mut title = String::new();
     let mut body = String::new();

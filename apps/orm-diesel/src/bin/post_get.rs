@@ -27,6 +27,7 @@ use std::env::args;
 use diesel::prelude::*;
 
 use orm_diesel::*;
+use orm_diesel::db::db_conn;
 
 // cargo run --bin post_get 1
 fn main() {
@@ -38,7 +39,7 @@ fn main() {
         .parse::<i32>()
         .expect("Invalid ID");
 
-    let connection = &mut db::db_conn();
+    let connection = &mut db_conn().unwrap();
 
     let post = t_posts
         .find(post_id)

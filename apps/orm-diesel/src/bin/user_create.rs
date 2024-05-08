@@ -37,6 +37,8 @@ fn get_cst_time() -> chrono::NaiveDateTime {
 pub fn create_user() -> User {
     use orm_diesel::schema::t_user;
     use orm_diesel::db::db_conn;
+
+    let connection = &mut db_conn().unwrap();
     let new_post = NewUser {
         name: "test".to_string(),
         description: None,
@@ -49,7 +51,7 @@ pub fn create_user() -> User {
     diesel::insert_into(t_user::table)
         .values(&new_post)
         .returning(User::as_returning())
-        .get_result(&mut db_conn())
+        .get_result(connection)
         .expect("Error saving new post")
 }
 

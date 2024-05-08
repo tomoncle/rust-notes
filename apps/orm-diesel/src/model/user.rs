@@ -27,6 +27,7 @@ use diesel::{AsChangeset, Identifiable, Insertable, Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 
 use crate::schema::t_user;
+use crate::schema::t_user::BoxedQuery;
 use crate::utils::time::{
     get_cst_naive_date_time, naive_date_time_from_option, naive_date_time_from_str,
 };
@@ -211,4 +212,9 @@ impl Default for User {
             delete_time: None,
         }
     }
+}
+
+// 定义一个查询工具类
+pub struct UserQueryBuilder {
+    pub query: BoxedQuery<'static, diesel::pg::Pg>,
 }

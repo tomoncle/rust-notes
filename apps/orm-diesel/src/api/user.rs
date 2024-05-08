@@ -23,44 +23,42 @@
  */
 
 use actix_web::{delete, get, post, put, Responder, web};
-use diesel::sql_types::Integer;
+use log::debug;
 use serde_json::Value;
 
-
 use crate::model::user::*;
-use crate::utils::http::RestHttpResponse;
+use crate::utils::http::{QueryParser, RestHttpResponse};
 
 #[get("/user")]
 async fn list(query: web::Query<Value>) -> impl Responder {
-    // let data: Value = serde_json::from_slice(&body).unwrap_or_else(|_| json!({}));
-    log::debug!("list query: {:?}", query);
-    let users = User::list();
+    debug!("list query: {:?}", query);
+    let params = QueryParser { query };
+    let page = params.i64("page", 1);
+    let page_size = params.i64("page_size", 10);
 
-    let views = users.iter().map(|x| UserView::from(x)).collect::<Vec<_>>();
-    let res = RestHttpResponse {
-        code: 200,
-        message: "OK".to_string(),
-        data: views,
-    };
-    web::Json(res)
+    match User::list(page, page_size) {
+        Ok(users) => {
+            let views = users.iter().map(|x| UserView::from(x)).collect::<Vec<_>>();
+            web::Json(RestHttpResponse::ok(Some(views)))
+        }
+        Err(error) => web::Json(RestHttpResponse::server_err(error.to_string()))
+    }
 }
 
 #[get("/user/{id}")]
 async fn get(id: web::Path<i32>) -> impl Responder {
-    // let data: Value = serde_json::from_slice(&body).unwrap_or_else(|_| json!({}));
-    log::debug!("get path: {:?}", id);
-    // let user = User::get(id.to_owned());
-    match User::get(id.to_owned()) {
-        Some(user) => web::Json(RestHttpResponse {
-            code: 200,
-            message: "OK".to_string(),
-            data: Some(UserView::from(user)),
-        }),
-        None => web::Json(RestHttpResponse {
-            code: 404,
-            message: "Not Found".to_string(),
-            data: None,
-        }),
+    let user_id = id.into_inner();
+    debug!("get path: {:?}", user_id);
+    match User::get(user_id) {
+        Ok(Some(user)) => {
+            web::Json(RestHttpResponse::ok(Some(UserView::from(user))))
+        }
+        Ok(None) => {
+            web::Json(RestHttpResponse::not_found(format!("user [{:?}] not found!", user_id)))
+        }
+        Err(err) => {
+            web::Json(RestHttpResponse::server_err(err.to_string()))
+        }
     }
 }
 
@@ -68,57 +66,38 @@ async fn get(id: web::Path<i32>) -> impl Responder {
 async fn create(body: web::Json<UserBody>) -> impl Responder {
     // let data: Value = serde_json::from_slice(&body).unwrap_or_else(|_| json!({}));
     let data = body.into_inner();
-    log::debug!("create body: {:?}", data);
-    let user = User::create(data);
-    let user_view = UserView::from(user);
-    let res = RestHttpResponse {
-        code: 200,
-        message: "OK".to_string(),
-        data: user_view,
-    };
-    web::Json(res)
+    debug!("create body: {:?}", data);
+    match User::create(data) {
+        Ok(user) => web::Json(RestHttpResponse::ok(Some(UserView::from(user)))),
+        Err(error) => web::Json(RestHttpResponse::server_err(error.to_string()))
+    }
 }
 
 #[put("/user")]
 async fn update(body: web::Json<UserBody>) -> impl Responder {
     // let data: Value = serde_json::from_slice(&body).unwrap_or_else(|_| json!({}));
     let data = body.into_inner();
+    debug!("update body: {:?}", data);
     if data.id.is_none() {
-        return web::Json(RestHttpResponse {
-            code: 400,
-            message: "id is required".to_string(),
-            data: None,
-        });
+        return web::Json(RestHttpResponse::bad_request("id is required".to_string()));
     }
-    log::debug!("update body: {:?}", data);
-    let user = User::update(data);
-    let user_view = UserView::from(user);
-    let res = RestHttpResponse {
-        code: 200,
-        message: "OK".to_string(),
-        data: Some(user_view),
-    };
-    web::Json(res)
+    match User::update(data) {
+        Ok(user) => web::Json(RestHttpResponse::ok(Some(UserView::from(user)))),
+        Err(error) => web::Json(RestHttpResponse::server_err(error.to_string()))
+    }
 }
-
 
 #[delete("/user/{id}")]
 async fn delete(id: web::Path<i32>) -> impl Responder {
-    // let data: Value = serde_json::from_slice(&body).unwrap_or_else(|_| json!({}));
-    log::debug!("get path: {:?}", id);
-    // let user = User::get(id.to_owned());
-    let ok = User::delete(id.to_owned());
-    if ok {
-        web::Json(RestHttpResponse {
-            code: 200,
-            message: "OK".to_string(),
-            data: None::<String>,
-        })
-    } else {
-        web::Json(RestHttpResponse {
-            code: 404,
-            message: "Not Found".to_string(),
-            data: None::<String>,
-        })
+    debug!("get path: {:?}", id);
+    match User::delete(id.into_inner()) {
+        Ok(line) => {
+            if line > 0 {
+                web::Json(RestHttpResponse::<String>::ok(None))
+            } else {
+                web::Json(RestHttpResponse::<String>::server_err("删除失败!".to_string()))
+            }
+        }
+        Err(error) => web::Json(RestHttpResponse::server_err(error.to_string()))
     }
 }
