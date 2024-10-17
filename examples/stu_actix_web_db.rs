@@ -26,8 +26,8 @@
 
 use std::env;
 
-use actix_web::{get, middleware, web, App, HttpServer, Responder};
-use diesel::debug_query;
+use actix_web::{App, get, HttpServer, middleware, Responder, web};
+// use diesel::debug_query;
 use diesel::prelude::*;
 use dotenv::dotenv;
 use log::{debug, info};
@@ -116,6 +116,13 @@ fn postgresql_connection() -> PgConnection {
     PgConnection::establish(&database_url).expect(err_msg)
 }
 
+#[derive(diesel::MultiConnection)]
+pub enum MultiDBConnection {
+    Postgresql(PgConnection),
+    Mysql(MysqlConnection),
+    Sqlite(SqliteConnection),
+}
+
 // 定义宏来打印 SQL 查询语句
 macro_rules! show_sql {
     ($query:expr) => {
@@ -126,7 +133,7 @@ macro_rules! show_sql {
                 if s == "true" {
                     debug!(
                         "\x1b[31m{:?}\x1b[0m",
-                        diesel::debug_query::<diesel::pg::Pg, _>($query)
+                        diesel::debug_query::<diesel::pg::Pg, _>($query).to_string().replace("\"", "")
                     );
                 }
             }
@@ -163,8 +170,33 @@ async fn index() -> impl Responder {
 async fn test(path: web::Path<String>) -> impl Responder {
     use self::t_test::dsl::*;
 
-    let conn = &mut postgresql_connection();
-    let results = t_test.limit(5).load::<ITest>(conn).unwrap();
+    // 下面这个数据库连接只能二选一，不能定义成动态的, 看上面注释的
+    // let conn = &mut postgresql_connection();
+    // let conn = &mut mysql_connection();
+    // let results = t_test.limit(5).load::<ITest>(conn).unwrap();
+
+    // 兼容多种数据库连接驱动
+    let db_type = env::var("DB_TYPE").unwrap_or_default();
+    info!("当前数据库类型：{}", &db_type);
+    let mut conn = match db_type.as_str() {
+        "postgres" => MultiDBConnection::Postgresql(postgresql_connection()),
+        "mysql" => MultiDBConnection::Mysql(mysql_connection()),
+        _ => MultiDBConnection::Sqlite(sqlite_connection()),
+    };
+    let query = t_test.limit(5);
+    show_sql!(&query);
+    // 这里每种数据库连接的查询语句都要实现一下
+    let results = match &mut conn {
+        MultiDBConnection::Postgresql(pg_conn) => {
+            query.load::<ITest>(pg_conn).unwrap()
+        }
+        MultiDBConnection::Mysql(mysql_conn) => {
+            query.load::<ITest>(mysql_conn).unwrap()
+        }
+        MultiDBConnection::Sqlite(sqlite_conn) => {
+            query.load::<ITest>(sqlite_conn).unwrap()
+        }
+    };
 
     let mut array = serde_json::json!([]);
     for test in results {
@@ -199,6 +231,7 @@ async fn hello(path: web::Path<String>) -> impl Responder {
 async fn main() -> std::io::Result<()> {
     env::set_var("RUST_LOG", "debug");
     env::set_var("SHOW_SQL", "true");
+    env::set_var("DB_TYPE", "mysql");
     env_logger::init();
 
     info!("App starting on: {}", "http://127.0.0.1:8080");
