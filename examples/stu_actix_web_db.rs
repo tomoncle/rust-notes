@@ -80,6 +80,19 @@ windows: 编译错误: could not find native static library `mysqlclient`, perha
 2.配置环境变量：export MYSQLCLIENT_LIB_DIR="C:\Program Files\MySQL\MySQL Server 5.7\lib"
 3.执行命令：cargo install diesel_cli --no-default-features --features mysql
 4.执行命令：cargo clean
+
+macOS: 编译错误
+1.安装Mysql：brew install mysql-client
+2.配置环境变量:
+    ## mysql config
+    # If you need to have mysql-client first in your PATH, run:
+    export PATH="/opt/homebrew/opt/mysql-client/bin:$PATH"
+
+    # For compilers to find mysql-client you may need to set:
+    export LDFLAGS="-L/opt/homebrew/opt/mysql-client/lib"
+    export CPPFLAGS="-I/opt/homebrew/opt/mysql-client/include"
+3.执行命令：cargo install diesel_cli --no-default-features --features mysql
+4.执行命令：cargo clean
 */
 fn mysql_connection() -> MysqlConnection {
     dotenv().ok();
@@ -106,6 +119,19 @@ windows: 编译错误: LINK : fatal error LNK1181: 无法打开输入文件“li
 2.配置环境变量: export PQ_LIB_DIR="C:\Program Files\Postgresql-16.2-1\pgsql\lib"
 3.执行命令: cargo install diesel_cli --no-default-features --features postgres
 4.执行命令: cargo clean
+
+macOS: 编译错误
+1.安装postgresql: brew install libpq
+2.配置环境变量:
+    ## Postgresql
+    export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+    export LDFLAGS="-L/opt/homebrew/opt/libpq/lib:$LDFLAGS"
+    export CPPFLAGS="-I/opt/homebrew/opt/libpq/include:$CPPFLAGS"
+    ## rust postgresql
+    export LIBRARY_PATH="$LIBRARY_PATH:/opt/homebrew/opt/libpq/lib"
+3.执行命令: cargo install diesel_cli --no-default-features --features postgres
+4.执行命令: cargo clean
+
 */
 // 连接 postgresql 数据库
 fn postgresql_connection() -> PgConnection {
