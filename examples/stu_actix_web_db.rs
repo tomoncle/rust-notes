@@ -26,7 +26,7 @@
 
 use std::env;
 
-use actix_web::{App, get, HttpServer, middleware, Responder, web};
+use actix_web::{get, middleware, web, App, HttpServer, Responder};
 // use diesel::debug_query;
 use diesel::prelude::*;
 use dotenv::dotenv;
@@ -142,6 +142,27 @@ fn postgresql_connection() -> PgConnection {
     PgConnection::establish(&database_url).expect(err_msg)
 }
 
+// #[derive(MultiConnection)] 这将派生出连接到不同 databases.diesel::Connection 的枚举的 implements []和相关特征
+//
+// 通过将此 derive 应用于此类枚举，您可以在所有内部连接都有效的任何位置将枚举用作连接类型。
+// 此 derive 支持包含单个 Tuples 字段的枚举变体。每个元组字段类型都必须实现和许多相关特征。
+// 此 databases.diesel::Connection 支持来自 Diesel 本身的连接类型以及第三方连接类型
+//
+// 实现尝试按照枚举中指定的连接顺序与给定的连接字符串建立新连接。
+// 如果一个连接失败，它将尝试下一个连接，依此类推。
+// 这意味着，一旦多个连接类型接受某个连接字符串，枚举中的第一个匹配类型将始终建立连接。
+// 如果其中一个连接类型是 []，则这一点尤其重要，因为此连接类型接受任意路径。
+// 它通常应该作为 enum 中的最后一个条目。
+// 如果要控制创建的连接类型，只需手动构造相应的枚举，首先通过内部类型建立连接，
+// 然后将结果包装到 enum.diesel::Connection::establishdiesel::SqliteConnection 中
+//
+// 局限性:
+// 派生连接实现只能涵盖 所有内部连接类型。
+// 因此，如果一个后端不支持某些 SQL 功能， 例如，与 Returning 子句一样，整个 Connection 实现不会 支持此功能。
+// 此外，仅支持一组有限的 SQL 类型：
+//
+// https://docs.diesel.rs/2.1.x/diesel/derive.MultiConnection.html
+// https://docs.diesel.rs/master/diesel_derives/derive.MultiConnection.html
 #[derive(diesel::MultiConnection)]
 pub enum MultiDBConnection {
     Postgresql(PgConnection),
@@ -159,7 +180,9 @@ macro_rules! show_sql {
                 if s == "true" {
                     debug!(
                         "\x1b[31m{:?}\x1b[0m",
-                        diesel::debug_query::<diesel::pg::Pg, _>($query).to_string().replace("\"", "")
+                        diesel::debug_query::<diesel::pg::Pg, _>($query)
+                            .to_string()
+                            .replace("\"", "")
                     );
                 }
             }
@@ -196,12 +219,13 @@ async fn index() -> impl Responder {
 async fn test(path: web::Path<String>) -> impl Responder {
     use self::t_test::dsl::*;
 
-    // 下面这个数据库连接只能二选一，不能定义成动态的, 看上面注释的
+    // 使用单一数据库连接
     // let conn = &mut postgresql_connection();
-    // let conn = &mut mysql_connection();
     // let results = t_test.limit(5).load::<ITest>(conn).unwrap();
 
     // 兼容多种数据库连接驱动
+    // https://docs.diesel.rs/2.1.x/diesel/derive.MultiConnection.html
+    // https://docs.diesel.rs/master/diesel_derives/derive.MultiConnection.html
     let db_type = env::var("DB_TYPE").unwrap_or_default();
     info!("当前数据库类型：{}", &db_type);
     let mut conn = match db_type.as_str() {
@@ -211,18 +235,28 @@ async fn test(path: web::Path<String>) -> impl Responder {
     };
     let query = t_test.limit(5);
     show_sql!(&query);
-    // 这里每种数据库连接的查询语句都要实现一下
-    let results = match &mut conn {
-        MultiDBConnection::Postgresql(pg_conn) => {
-            query.load::<ITest>(pg_conn).unwrap()
-        }
-        MultiDBConnection::Mysql(mysql_conn) => {
-            query.load::<ITest>(mysql_conn).unwrap()
-        }
-        MultiDBConnection::Sqlite(sqlite_conn) => {
-            query.load::<ITest>(sqlite_conn).unwrap()
-        }
-    };
+    // 执行通用查询
+    let results = query.load::<ITest>(&mut conn).unwrap();
+
+    // 使用 if let 语句来匹配 conn 的具体类型。
+    // 如果 conn 是 MultiDBConnection::Postgresql，则会执行 PostgreSQL 特有的查询。
+    // ref mut conn 表示对 conn 的可变引用，这样可以在匹配后直接使用它进行查询
+    if let MultiDBConnection::Postgresql(ref mut conn) = conn {
+        // 在此处执行特定于 PostgreSQL 的查询
+        let results = query.load::<ITest>(conn).unwrap();
+    }
+    // 如果对多种数据库没有兼容查询方法，可以使用下面方法，每种数据库连接的查询语句都实现一下
+    // let results = match &mut conn {
+    //     MultiDBConnection::Postgresql(pg_conn) => {
+    //         query.load::<ITest>(pg_conn).unwrap()
+    //     }
+    //     MultiDBConnection::Mysql(mysql_conn) => {
+    //         query.load::<ITest>(mysql_conn).unwrap()
+    //     }
+    //     MultiDBConnection::Sqlite(sqlite_conn) => {
+    //         query.load::<ITest>(sqlite_conn).unwrap()
+    //     }
+    // };
 
     let mut array = serde_json::json!([]);
     for test in results {
