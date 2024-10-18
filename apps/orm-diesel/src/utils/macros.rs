@@ -26,6 +26,9 @@
 //
 // 在 Rust 中，#[macro_export] 是一个属性宏，用于定义可以在其他模块中使用的宏。
 // 它的作用是将宏导出，使其在当前 crate 之外也能被访问。
+//
+// 不需要在宏定义前使用 pub,  使用 #[macro_export] 可以将宏导出到其他模块。
+// 宏的可见性是由其所在模块的可见性控制的。
 #[macro_export]
 macro_rules! show_sql_info {
     ($query:expr) => {

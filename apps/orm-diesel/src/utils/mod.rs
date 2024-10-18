@@ -26,7 +26,7 @@
 pub mod time;
 #[allow(dead_code)]
 pub mod http;
-mod macros;
+pub mod macros;
 
 pub fn show_sql<T: diesel::query_builder::QueryFragment<diesel::pg::Pg>>(query: &T) {
     // println!("\x1b[31mSQL: {}\x1b[0m\n", diesel::debug_query::<diesel::pg::Pg, _>(query).to_string());

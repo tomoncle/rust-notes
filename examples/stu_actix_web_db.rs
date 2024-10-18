@@ -105,6 +105,14 @@ fn mysql_connection() -> MysqlConnection {
 }
 
 // 连接 SQLite 数据库
+//
+// 编译错误：
+// = note: LINK : fatal error LNK1181: cannot open input file 'sqlite3.lib'
+// linking with `link.exe` failed: exit code: 1181
+//
+// 解决方法：
+// Cargo.toml 添加依赖：libsqlite3-sys = { version = "0.28.0", features = ["bundled"] }
+//
 fn sqlite_connection() -> SqliteConnection {
     dotenv().ok();
     // let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");

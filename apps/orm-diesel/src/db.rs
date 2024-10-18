@@ -26,9 +26,9 @@ use std::sync::Once;
 
 use diesel::pg::PgConnection;
 
-use diesel::{MysqlConnection, r2d2, SqliteConnection};
-use diesel::r2d2::{ConnectionManager, HandleEvent, PooledConnection};
+use diesel::r2d2;
 use diesel::r2d2::event::{AcquireEvent, CheckinEvent, CheckoutEvent, ReleaseEvent, TimeoutEvent};
+use diesel::r2d2::{ConnectionManager, HandleEvent, PooledConnection};
 use dotenvy::dotenv;
 use log::{debug, error, info};
 
@@ -67,11 +67,14 @@ fn db_pool() -> &'static r2d2::Pool<ConnectionManager<PgConnection>> {
             dotenv().ok(); // 读取 .env 文件
             let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
             let manager = ConnectionManager::<PgConnection>::new(database_url);
-            POOL = Some(r2d2::Pool::builder()
-                .event_handler(Box::new(PGEventHandler))
-                .max_size(10)
-                .min_idle(Some(5))
-                .build(manager).unwrap());
+            POOL = Some(
+                r2d2::Pool::builder()
+                    .event_handler(Box::new(PGEventHandler))
+                    .max_size(10)
+                    .min_idle(Some(5))
+                    .build(manager)
+                    .unwrap(),
+            );
         });
         POOL.as_ref().unwrap()
     }
@@ -84,12 +87,12 @@ pub fn db_conn() -> Result<PooledConnection<ConnectionManager<PgConnection>>, an
     })
 }
 
-#[derive(diesel::MultiConnection)]
-pub enum MultiDBConnection {
-    Postgresql(PgConnection),
-    Mysql(MysqlConnection),
-    Sqlite(SqliteConnection),
-}
+// #[derive(diesel::MultiConnection)]
+// pub enum MultiDBConnection {
+//     Postgresql(PgConnection),
+//     Mysql(MysqlConnection),
+//     Sqlite(SqliteConnection),
+// }
 //
 // static INIT: Once = Once::new();
 // static mut POOL: Option<r2d2::Pool<ConnectionManager<MultiDBConnection>>> = None;
