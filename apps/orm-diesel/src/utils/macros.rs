@@ -22,21 +22,33 @@
  * SOFTWARE.
  */
 
-#[allow(dead_code)]
-pub mod time;
-#[allow(dead_code)]
-pub mod http;
-mod macros;
+// 定义一个打印SQL的宏，外部调用该宏时，使用 use crate::show_sql_info; 引用即可.
+//
+// 在 Rust 中，#[macro_export] 是一个属性宏，用于定义可以在其他模块中使用的宏。
+// 它的作用是将宏导出，使其在当前 crate 之外也能被访问。
+#[macro_export]
+macro_rules! show_sql_info {
+    ($query:expr) => {
+        // 这里引用下面两个函数，是为了调用该宏的rs文件中就不用引用这两个函数了，
+        // 不然需要在调用该宏的文件中显示的引用，宏中使用的函数
+        // use log::debug;
+        // use std::env;
+        //
+        use log::debug;
+        use std::env;
 
-pub fn show_sql<T: diesel::query_builder::QueryFragment<diesel::pg::Pg>>(query: &T) {
-    // println!("\x1b[31mSQL: {}\x1b[0m\n", diesel::debug_query::<diesel::pg::Pg, _>(query).to_string());
-    match std::env::var("SHOW_SQL") {
-        Ok(bool) => {
-            if bool == "true" {
-                log::debug!("\x1b[31mSQL ==> {}\x1b[0m",
-                    diesel::debug_query::<diesel::pg::Pg, _>(query).to_string().replace("\"", ""));
+        match env::var("SHOW_SQL") {
+            Ok(s) => {
+                if s == "true" {
+                    debug!(
+                        "当前执行的SQL: \x1b[31m{:?}\x1b[0m",
+                        diesel::debug_query::<diesel::pg::Pg, _>($query)
+                            .to_string()
+                            .replace("\"", "")
+                    );
+                }
             }
-        }
-        Err(_) => {}
+            Err(_) => {}
+        };
     };
 }

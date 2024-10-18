@@ -2,7 +2,7 @@
 name = "rust-notes"
 version = "0.1.0"
 authors = ["tomoncle <1123431949@qq.com>"]
-edition = "2018"
+edition = "2021"
 
 [features]
 # 定义自己的 features, 自定义控制单元测试模块
@@ -32,8 +32,10 @@ prettytable-rs = "^0.10"
 ### web 框架
 actix-web = "4.4.0"
 ### database
-diesel = { version = "2.1.4", features = ["sqlite", "mysql", "postgres"] }
+# diesel = { version = "2.1.4", features = ["sqlite", "mysql", "postgres"] }
 # diesel = { version = "2.1.4", features = ["sqlite"] }
+diesel = { version = "2.1.4", features = ["sqlite", "mysql", "postgres", "chrono", "time", "r2d2"] }
+anyhow = "1.0.79"
 libsqlite3-sys = { version = "0.28.0", features = ["bundled"] }
 dotenv = "0.15.0"
 ### 视频处理

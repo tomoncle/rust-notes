@@ -25,12 +25,14 @@
 // https://github.com/robatipoor/rustfulapi
 
 use std::env;
+use std::sync::Once;
 
-use actix_web::{get, middleware, web, App, HttpServer, Responder};
-// use diesel::debug_query;
+use actix_web::{App, get, HttpServer, middleware, Responder, web};
 use diesel::prelude::*;
+use diesel::r2d2;
+use diesel::r2d2::{ConnectionManager, PooledConnection};
 use dotenv::dotenv;
-use log::{debug, info};
+use log::{debug, error, info};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -59,14 +61,14 @@ table! {
 }
 
 // 定义用户模型
-#[derive(Queryable, Serialize)]
+#[derive(Debug, Queryable, Serialize, Insertable)]
 struct User {
     id: i32,
     name: String,
     email: String,
 }
 
-#[derive(Queryable, Serialize)]
+#[derive(Debug, Queryable, Serialize)]
 struct ITest {
     id: i32,
     name: String,
@@ -170,6 +172,34 @@ pub enum MultiDBConnection {
     Sqlite(SqliteConnection),
 }
 
+static INIT: Once = Once::new();
+static mut POOL: Option<r2d2::Pool<ConnectionManager<MultiDBConnection>>> = None;
+
+fn db_pool() -> &'static r2d2::Pool<ConnectionManager<MultiDBConnection>> {
+    unsafe {
+        INIT.call_once(|| {
+            info!("initial load connection pool.");
+            let database_url = "mysql://root:root@127.0.0.1:3306/db_rust";
+            let manager = ConnectionManager::<MultiDBConnection>::new(database_url);
+            POOL = Some(
+                r2d2::Pool::builder()
+                    .max_size(10)
+                    .min_idle(Some(5))
+                    .build(manager)
+                    .unwrap(),
+            );
+        });
+        POOL.as_ref().unwrap()
+    }
+}
+
+pub fn db_conn() -> Result<PooledConnection<ConnectionManager<MultiDBConnection>>, anyhow::Error> {
+    db_pool().get().map_err(|err| {
+        error!("获取数据库连接失败: {:?}", err);
+        anyhow::Error::from(err)
+    })
+}
+
 // 定义宏来打印 SQL 查询语句
 macro_rules! show_sql {
     ($query:expr) => {
@@ -194,14 +224,18 @@ macro_rules! show_sql {
 // 查询操作示例
 async fn index() -> impl Responder {
     use self::users::dsl::*;
-    let conn = &mut postgresql_connection();
+
+    // let conn = &mut postgresql_connection();
     // let results = users
     //     .limit(5)
     //     .load::<User>(&mut conn)
     //     .expect("Error loading users");
+    debug!("使用单一数据库连接");
+    let mut conn = mysql_connection();
     let query = users.limit(5);
     show_sql!(&query);
-    let results = query.load::<User>(conn).unwrap();
+    let results = query.load::<User>(&mut conn).unwrap();
+
     let mut array = serde_json::json!([]);
     for user in results {
         let obj = serde_json::json!(&user);
@@ -216,18 +250,67 @@ async fn index() -> impl Responder {
     serde_json::to_string(&res).unwrap()
 }
 
-async fn test(path: web::Path<String>) -> impl Responder {
+async fn test_pool_datasource(path: web::Path<String>) -> impl Responder {
     use self::t_test::dsl::*;
 
-    // 使用单一数据库连接
-    // let conn = &mut postgresql_connection();
+    debug!("测试数据库连接池");
+    // 使用数据库连接池
+    let mut conn = db_conn().unwrap();
     // let results = t_test.limit(5).load::<ITest>(conn).unwrap();
+    // 拆分上面的查询，用于打印SQL
+    let query = t_test.limit(5);
+    show_sql!(&query);
+    let results = query.load::<ITest>(&mut conn).unwrap();
 
+    let mut array = serde_json::json!([]);
+    for test in results {
+        let obj = serde_json::json!(&test);
+        array.as_array_mut().unwrap().push(obj)
+    }
+    let res = RestHttpResponse {
+        code: 200,
+        message: format!("welcome {}!", &path),
+        data: array,
+    };
+    // 用serde_json::to_string序列化
+    serde_json::to_string(&res).unwrap()
+}
+
+async fn test_singleton_datasource(path: web::Path<String>) -> impl Responder {
+    use self::t_test::dsl::*;
+
+    debug!("使用单一数据库连接");
+    // 使用单一数据库连接
+    let mut conn = mysql_connection();
+    // let results = t_test.limit(5).load::<ITest>(conn).unwrap();
+    // 拆分上面的查询，用于打印SQL
+    let query = t_test.limit(5);
+    show_sql!(&query);
+    let results = query.load::<ITest>(&mut conn).unwrap();
+
+    let mut array = serde_json::json!([]);
+    for test in results {
+        let obj = serde_json::json!(&test);
+        array.as_array_mut().unwrap().push(obj)
+    }
+    let res = RestHttpResponse {
+        code: 200,
+        message: format!("welcome {}!", &path),
+        data: array,
+    };
+    // 用serde_json::to_string序列化
+    serde_json::to_string(&res).unwrap()
+}
+
+async fn test_multi_datasource(path: web::Path<String>) -> impl Responder {
+    use self::t_test::dsl::*;
+
+    debug!("测试多数据源连接");
     // 兼容多种数据库连接驱动
     // https://docs.diesel.rs/2.1.x/diesel/derive.MultiConnection.html
     // https://docs.diesel.rs/master/diesel_derives/derive.MultiConnection.html
     let db_type = env::var("DB_TYPE").unwrap_or_default();
-    info!("当前数据库类型：{}", &db_type);
+    debug!("当前数据库类型：{}", &db_type);
     let mut conn = match db_type.as_str() {
         "postgres" => MultiDBConnection::Postgresql(postgresql_connection()),
         "mysql" => MultiDBConnection::Mysql(mysql_connection()),
@@ -237,13 +320,13 @@ async fn test(path: web::Path<String>) -> impl Responder {
     show_sql!(&query);
     // 执行通用查询
     let results = query.load::<ITest>(&mut conn).unwrap();
-
     // 使用 if let 语句来匹配 conn 的具体类型。
     // 如果 conn 是 MultiDBConnection::Postgresql，则会执行 PostgreSQL 特有的查询。
     // ref mut conn 表示对 conn 的可变引用，这样可以在匹配后直接使用它进行查询
     if let MultiDBConnection::Postgresql(ref mut conn) = conn {
         // 在此处执行特定于 PostgreSQL 的查询
         let results = query.load::<ITest>(conn).unwrap();
+        debug!("{:?}", results)
     }
     // 如果对多种数据库没有兼容查询方法，可以使用下面方法，每种数据库连接的查询语句都实现一下
     // let results = match &mut conn {
@@ -300,7 +383,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Compress::default())
             .wrap(middleware::Logger::default())
             .route("/", web::get().to(index))
-            .route("/test/{name}", web::get().to(test))
+            .route("/simple/{name}", web::get().to(test_singleton_datasource))
+            .route("/multiple/{name}", web::get().to(test_multi_datasource))
+            .route("/pool/{name}", web::get().to(test_pool_datasource))
             .service(hello)
     })
         .bind("127.0.0.1:8080")?

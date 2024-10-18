@@ -91,6 +91,9 @@ pub mod json;
 // 表示：当前 utils 模块包含了在 src/utils/fake_structs.rs 中的代码
 pub mod fake_structs;
 
+// 表示：当前 utils 模块包含了在 src/utils/macros.rs 中的代码
+mod macros;
+
 // 定义自己的 模块树
 #[allow(dead_code)] // 使用 #[allow(dead_code)] 属性来禁止编译器对未使用的代码发出警告
 pub mod country {

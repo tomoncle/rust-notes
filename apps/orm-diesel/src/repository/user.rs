@@ -26,10 +26,10 @@
 use anyhow::Context;
 use diesel::{Connection, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl, SelectableHelper};
 use log::error;
-
 use crate::db::db_conn;
 use crate::model::user::*;
 use crate::schema::t_user::dsl::*;
+use crate::show_sql_info;
 use crate::utils::show_sql;
 use crate::utils::time::get_cst_naive_date_time;
 
@@ -81,7 +81,7 @@ impl User {
             .offset((page - 1) * page_size)
             .limit(page_size)
             .select(User::as_select());
-
+        show_sql_info!(&dsl.clone());
         show_sql(&dsl.clone());
         dsl.load(&mut conn)
             .map_err(|err| {
